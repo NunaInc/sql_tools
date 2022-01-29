@@ -28,7 +28,7 @@ function prepare_src() {
     TMPDIR="${1%/}"
     mkdir -p "$TMPDIR/src/"
     echo $(date) : "=== Preparing sources in dir: ${TMPDIR}"
-    RUNFILES=bazel-bin/package/build_pip.runfiles/nuna_schema
+    RUNFILES=bazel-bin/package/build_pip.runfiles/nuna_sql_tools
     for pkg in dataschema sql_analyze; do
         cp -LR ${RUNFILES}/${pkg} "${TMPDIR}/src/"
         touch ${TMPDIR}/src/${pkg}/__init__.py

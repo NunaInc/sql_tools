@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""Nuna Schema contains utilities to create and manipulate schemas.
+"""Nuna Sql Tools contains utilities to create and manipulate schemas and sql statements.
 
 Check README.md for details.
 """
@@ -22,7 +22,7 @@ from setuptools import find_packages
 from setuptools import setup
 
 
-PROJECT = 'nuna_schema'
+PROJECT = 'nuna_sql_tools'
 with open('VERSION', 'r', encoding='utf-8') as f:
     VERSION = f.read().strip()
 with open('requirements-dev.txt', 'r', encoding='utf-8') as f:
@@ -40,10 +40,20 @@ setup(
     description=DOCLINES[0],
     long_description='\n'.join(DOCLINES[2:]),
     long_description_content_type="text/markdown",
-    url='https://nuna.com/',
-    download_url='https://gitlab.nuna.cloud/NunaHealth/schema',
+    url='https://github.com/NunaInc/sql_tools',
+    download_url='https://github.com/NunaInc/sql_tools',
     author='Nuna Inc.',
     author_email='catalin@nuna.com',
+    license='Apache 2.0',
+    classifiers=[
+        'Development Status :: 3 - Alpha',
+        'Topic :: Database',
+        'Topic :: Software Development :: Libraries',
+        'Programming Language :: SQL',
+        'Programming Language :: Python :: 3 :: Only',
+        'License :: OSI Approved :: Apache Software License',
+        'Intended Audience :: Developers',
+    ],
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     entry_points = {
