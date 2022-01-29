@@ -1,0 +1,28 @@
+syntax = "proto2";
+import "dataschema/Schema.proto";
+
+package nuna.schema.test.pb;
+option java_package = "com.nuna.schema.test";
+
+message Example {
+  required string member_id = 1;
+  required int64 num_claims = 2;
+  optional int64 rx_num_claims = 3 [
+      (nuna.schema.pb.column_clickhouse_annotation)
+      .compression_type = COMPRESS_ZSTD
+    ];
+  optional sint32 start_date = 4 [
+      (nuna.schema.pb.column_info).column_type = TYPE_DATE
+    ];
+  optional bytes total_paid = 5 [
+      (nuna.schema.pb.column_info) = {
+        column_type: TYPE_DECIMAL
+        decimal_info { precision: 12 scale: 2 }
+      }
+    ];
+  option (nuna.schema.pb.table_clickhouse_annotation) = {
+    engine: ENGINE_MERGE_TREE
+    order_by_fields: 'member_id'
+    index_granularity: 8192
+  };
+}

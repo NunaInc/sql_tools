@@ -1,0 +1,49 @@
+#
+# nuna_sql_tools: Copyright 2022 Nuna Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+package(default_visibility = ["//visibility:public"])
+
+load("@rules_python//python:defs.bzl", "py_library")
+load("@bazel_pylint//:pyrules.bzl", "py_lint_library")
+load("@nuna_sql_tools_pip_deps//:requirements.bzl", "requirement")
+
+py_library(
+    name = "ClickHouse",
+    srcs = [
+        "ClickHouseLexer.py",
+        "ClickHouseParser.py",
+        "ClickHouseParserVisitor.py",
+    ],
+    srcs_version = "PY3",
+    deps = [
+        requirement("antlr4-python3-runtime"),
+    ],
+)
+
+py_lint_library(
+    name = "parse_lib",
+    srcs = [
+        "create_table_schema.py",
+        "parse_sql_lib.py",
+        "statement_builder.py",
+    ],
+    rules = "//:pylintrc",
+    srcs_version = "PY3",
+    deps = [
+        ":ClickHouse",
+        "//dataschema",
+        "//sql_analyze/grammars",
+    ],
+)

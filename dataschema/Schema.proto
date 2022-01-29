@@ -1,0 +1,315 @@
+syntax = "proto2";
+import "google/protobuf/descriptor.proto";
+
+package nuna.schema.pb;
+
+option java_package = "com.nuna.schema.pb";
+option java_outer_classname = "Annotations";
+
+// Information about a schema column or field..
+// This may appear as a field option annotation in a protocol buffer, or as a
+// proto bearing the full information.
+//
+// Some of the fields here are provided directly or implicitly by the proto
+// structure.
+//
+message ColumnInfo {
+  // Database type of the column - matches Clickhouse data type.
+  enum ColumnType {
+    TYPE_UNDEFINED = 0;
+    // Implicit for string fields.
+    TYPE_STRING = 1;
+    // Implicit for bytes fields.
+    TYPE_BYTES = 2;
+    // Implicit for boolean fields.
+    TYPE_BOOLEAN = 3;
+    // Possible for int32 or sint32 fields.
+    TYPE_INT_8 = 4;
+    // Possible for int32 or sint32 fields.
+    TYPE_INT_16 = 5;
+    // Implicit for int32 or sint32 fields.
+    TYPE_INT_32 = 6;
+    // Implicit for int64 or sint64 fields
+    TYPE_INT_64 = 7;
+    // Possible for uint32 or fixed32 fields.
+    TYPE_UINT_8 = 8;
+    // Possible for uint32 or fixed32 fields.
+    TYPE_UINT_16 = 9;
+    // Implicit for uint32 or fixed32 fields.
+    TYPE_UINT_32 = 10;
+    // Implicit for uint64 or fixed64 fields.
+    TYPE_UINT_64 = 11;
+    // Possible for bytes fields.
+    // Exact byte representation of the bytes in proto form TBD.
+    // These fields *must* carry a decimal_info annotation.
+    TYPE_DECIMAL = 12;
+    // Implicit for float fields.
+    TYPE_FLOAT_32 = 13;
+    // Implicit for double fields.
+    TYPE_FLOAT_64 = 14;
+    // Possible for int32 or sint32 fields.
+    // Exact date representation of the date fields in proto TBD.
+    // Probably the best is YYYYMMDD as an integer e.g. 20210801
+    TYPE_DATE = 15;
+    // Possible for int64 or sint64 fields.
+    // These fields *can* carry a timestamp_info annotation.
+    // Exact date representation of the date fields in proto TBD.
+    // Probably the time units from unix time origin, the units being determined
+    // by timestamp_info annotation.
+    TYPE_DATETIME_64 = 16;
+
+    // The next annotations are to be used on message types.
+
+    // Corresponds to a message type with normal structured content.
+    // `field` carry the the members of the nested type.
+    // `message_name` carry the full name of the original proto message.
+    TYPE_NESTED = 17;
+    // Corresponds to a nested type that contains just one field named
+    // `element` which represents the member of the array.
+    // This allows definitions of 'arrays of arrays' or arrays of nullable
+    // fields that the normal proto repeated semantics does not allow.
+    // Can be applied to repeated message fields only.
+    TYPE_ARRAY = 18;
+    // Corresponds to a nested type that contains just one field named
+    // `element` which represents the member of the set.
+    // Similar with TYPE_ARRAY but with different semantics.
+    // Can be applied to repeated message fields only.
+    TYPE_SET = 19;
+    // Corresponds to a map field.
+    // `field` carries two members [0] - key and [1] - value.
+    TYPE_MAP = 20;
+  };
+  optional ColumnType column_type = 1;
+  // Information about TYPE_DECIMAL precision and scale.
+  message DecimalInfo {
+    // Digits after the dot.
+    // Scale should be less or equal to precision.
+    optional uint32 scale = 1;
+    // Digits before the dot. Less than 76 (clickhouse limit).
+    optional uint32 precision = 2;
+  }
+  optional DecimalInfo decimal_info = 2;
+  // Information about TYPE_DATETIME_64 precision and timezone.
+  message TimestampInfo {
+    // In negative powers of 10. e.g. 3 for milliseconds).
+    // This is expected to be a multiple of 3 < 9 (i.e. one of 0, 3, 6, 9);
+    optional uint32 precision = 1;
+    // The standard timezone database name for the timestamp.
+    // E.g. Etc/UTC, America/Los_Angeles.
+    // In general should use the Etc/UTC in canonical data. Use specific ones
+    // for external/client data that comes in very specific timezones.
+    optional string timezone = 2;
+  }
+  optional TimestampInfo timestamp_info = 3;
+  // Semantics for repeated fields
+  enum RepeatedSemantics {
+    // Undefined semantics of the repeated field - system choice - defaults to
+    // array-like semantics.
+    REPEATED_UNDEFINED = 0;
+    // Array semantics - indexed list of elements.
+    REPEATED_ARRAY = 1;
+    // Set semantics - unique elements in unspecified order.
+    REPEATED_SET = 2;
+  }
+  optional RepeatedSemantics repeated_semantics = 4;
+
+  // The reset of the fields are implied from the proto representation of
+  // a field. **Do not specify them in proto field annotations**
+
+  // Underlying proto field label - implies arrays for repeated and
+  // nullable for optionals.
+  enum Label {
+    LABEL_UNDEFINED = 0;
+    LABEL_OPTIONAL = 1;
+    LABEL_REQUIRED = 2;
+    LABEL_REPEATED = 3;
+  }
+  optional Label label = 5;
+  // Name of the column (field) - same as in the proto Message.
+  optional string name = 6;
+  // For nested types, the full name of the message representing this column.
+  optional string message_name = 7;
+  // Id of the field in the original proto representation.
+  optional int32 field_id = 8;
+  // The internal fields or elements for nested / array / set / map.
+  repeated Column field = 9;
+  // If the field is deprecated.
+  optional bool deprecated = 10;
+  // The JSON encoded synthetic data generator specification.
+  optional string synthgen_spec = 11;
+}
+extend google.protobuf.FieldOptions {
+  optional ColumnInfo column_info = 50000;
+}
+
+// Annotations specific for general information about the data in the column.
+message ColumnDataAnnotation {
+  // If this column is an identifier (i.e. key) of the table.
+  // Can be applied to multiple columns to denote a composed key.
+  optional bool is_id = 1;
+  // Comment about the data stored in the column.
+  optional string comment = 2;
+  // Data Quality annotation - various restrictions on the data stored in the column.
+  message DqField {
+    optional bool is_nullable = 1;
+    optional bool is_ignored = 2;
+    optional string format = 3;
+    repeated string enum_value = 4;
+    optional string regexp = 5;
+  }
+  optional DqField dq_field = 3;
+  // A name used to denote how various tables can be joined.
+  // This should be a full column class name.
+  // E.g.
+  // class A:
+  //    a_id: Id(int)
+  //    a_info: str
+  // class B:
+  //    b_id: Id(int)
+  //    a_foreign_key: JoinReference(int, 'A')
+  optional string join_reference = 4;
+  // Width of the data - normally for strings and bytes, this is the maximum size.
+  optional int32 width = 6;
+  // If the field is normally a large object (string / bytes).
+  optional bool is_lob = 7;
+}
+extend google.protobuf.FieldOptions {
+  optional ColumnDataAnnotation column_data_annotation = 50005;
+}
+
+// Some clickhouse specific column annotations, describing specific encoding
+// or properties of a column.
+message ColumnClickhouseAnnotation {
+  // Storage compression in clickhouse tables:
+  enum CompressionType {
+    COMPRESS_DEFAULT = 0;
+    COMPRESS_LZ4 = 1;
+    COMPRESS_ZSTD = 2;
+    COMPRESS_UNCOMPRESSED = 3;
+    COMPRESS_LZ4HC = 4;
+  }
+  optional CompressionType compression_type = 1;
+  // Level of compression for ZSTD compressed columns.
+  optional uint32 compression_level = 2;
+  // Delta compression for integer fields.
+  optional uint32 delta_compression_width = 3;
+  // For low cardinality fields (implicit for ENUM types that encode as strings)
+  // Should be used only for string types, as for ints it is not allowed this
+  // annotation clickhouse.
+  optional bool is_low_cardinality = 7;
+  // Override the default type implied by this field with this
+  // clickhouse type when generating the SQL.
+  optional string type_name = 4;
+}
+extend google.protobuf.FieldOptions {
+  optional ColumnClickhouseAnnotation column_clickhouse_annotation = 50004;
+}
+
+
+// Annotations specific for Scala representation of a columns in a case class.
+// Mostly added to support existed code - should abstain from using.
+// We may move some of these to the general ColumnInfo if we find them generally
+// needed.
+message ColumnScalaAnnotation {
+  // Original name of the field when escaping `` names
+  optional string original_name = 1;
+  // Use this Scala/Java type to represent in scala generated code. This
+  // is needed due to inconsistencies e.g. Integer class instead of scala
+  // Int, or BigDecimal instead of Decimal. This generally sucks.
+  // Do not use for new protos - always use a consistent type (Int, Decimal)
+  optional string java_type_name = 2;
+  // Special scala snippet initializer for the field in the scala class.
+  // Do not use for new protos - treat in usage code.
+  optional string initializer = 3;
+}
+extend google.protobuf.FieldOptions {
+  optional ColumnScalaAnnotation column_scala_annotation = 50002;
+}
+
+// Wraps together all the information regarding a column.
+message Column {
+  required ColumnInfo info = 1;
+  optional ColumnDataAnnotation data_annotation = 2;
+  optional ColumnClickhouseAnnotation clickhouse_annotation = 3;
+  optional ColumnScalaAnnotation scala_annotation = 4;
+}
+
+// Represents a 'Table' which corresponds to a proto Message.
+message TableInfo {
+  // Corresponds to the message name.
+  optional string name = 1;
+  // Full name of the message.
+  optional string full_name = 2;
+  // Implicitly provided by proto structure - used when encoding schemas
+  // using these protos.
+  repeated Column column = 3;
+  // Proto/Python package of the original message. '{package}.{name}'
+  // creates the full message name for top level messages.
+  optional string package = 4;
+  // Java package of the original message.
+  optional string java_package = 5;
+  // Any nested messages defined in the original message.
+  // In general should not use nested messages for schema representation.
+  // Mainly used for already existing code.
+  repeated TableInfo nested = 6;
+}
+
+// Annotations to a table regarding the data stored in it.
+message TableDataAnnotation {
+  // A comment about the data stored in this table.
+  optional string comment = 1;
+}
+extend google.protobuf.MessageOptions {
+  optional TableDataAnnotation table_data_annotation = 50006;
+}
+
+// Annotations to a message to denote the default clickhouse table parameters.
+message TableClickhouseAnnotation {
+  enum Engine {
+    ENGINE_DEFAULT = 0;
+    ENGINE_MERGE_TREE = 1;
+    ENGINE_LOG = 2;
+    ENGINE_TINY_LOG = 3;
+    ENGINE_REPLICATED_MERGE_TREE = 4;
+  }
+  // Storage engine for the table (from above).
+  optional Engine engine = 1;
+  // Fields to order by - for merge tree engine type, if this is not
+  // specified, we use the `tuple()` order by
+  // Should not contain optional (i.e. nullable) fields.
+  repeated string order_by_fields = 2;
+  // Clauses for PARTITION BY option in the table. Should not contain or
+  // depend on optional (i.e. nullable) fields.
+  repeated string partition_by_sql_expression = 3;
+  // Expression to SAMPLE BY the table. Should not contain or
+  // depend on optional (i.e. nullable) fields.
+  repeated string sample_by_sql_expression = 6;
+  // Option for index_granularity table setting.
+  optional uint32 index_granularity = 4;
+  // Annotates that this message does not correspond to a top level clickhouse
+  // table.
+  optional bool no_table = 5;
+  // Applies this compression to all columns in the table.
+  optional ColumnClickhouseAnnotation.CompressionType default_compression = 7;
+}
+extend google.protobuf.MessageOptions {
+  optional TableClickhouseAnnotation table_clickhouse_annotation = 50001;
+}
+
+// ScalaAnnotations - translate to Scala annotations in generated .scala,
+// at class level.
+message TableScalaAnnotation {
+  // @Entity class annotation
+  optional bool is_entity = 1;
+}
+extend google.protobuf.MessageOptions {
+  optional TableScalaAnnotation table_scala_annotation = 50003;
+}
+
+// Wraps together all the information regarding a table.
+message Table {
+  required TableInfo info = 1;
+  optional TableDataAnnotation data_annotation = 2;
+  optional TableClickhouseAnnotation clickhouse_annotation = 3;
+  optional TableScalaAnnotation scala_annotation = 4;
+}

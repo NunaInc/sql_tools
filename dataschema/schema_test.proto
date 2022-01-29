@@ -1,0 +1,103 @@
+syntax = "proto2";
+import "dataschema/Schema.proto";
+
+package nuna.schema.test.pb;
+option java_package = "com.nuna.schema.test";
+
+message TestJoinProto {
+  option (nuna.schema.pb.table_scala_annotation).is_entity = true;
+  option (nuna.schema.pb.table_data_annotation).comment = "Joint Comment";
+  required sint64 id = 1 [
+    (nuna.schema.pb.column_data_annotation).is_id = true
+  ];
+}
+
+message TestProto {
+  option (nuna.schema.pb.table_clickhouse_annotation) = {
+    engine: ENGINE_REPLICATED_MERGE_TREE
+    order_by_fields: 'id'
+    order_by_fields: 'fsint32'
+    partition_by_sql_expression: 'toYYYYMM(fdate)'
+    index_granularity: 8192
+  };
+  required sint64 id = 1 [
+      (nuna.schema.pb.column_data_annotation).is_id = true,
+      (nuna.schema.pb.column_data_annotation).join_reference = "TestJoinProto"
+  ];
+  required uint32 fint32 = 2 [
+      (nuna.schema.pb.column_clickhouse_annotation) = {
+        delta_compression_width: 2
+        compression_type: COMPRESS_ZSTD
+        compression_level: 7
+      }
+  ];
+  required sint32 fsint32 = 3;
+  required uint64 fint64 = 4 [
+      (nuna.schema.pb.column_clickhouse_annotation)
+      .compression_type = COMPRESS_LZ4
+  ];
+  optional sint64 fsint64 = 5;
+  optional double fdouble = 6;
+  optional float ffloat = 7;
+  optional string fstring = 8 [
+      (nuna.schema.pb.column_clickhouse_annotation).is_low_cardinality = true
+  ];
+  optional bytes fbytes = 9;
+  optional sint32 fdate = 10  [
+      (nuna.schema.pb.column_info).column_type = TYPE_DATE
+  ];
+  optional sint64 ftimestamp = 11  [
+      (nuna.schema.pb.column_info).column_type = TYPE_DATETIME_64,
+      (nuna.schema.pb.column_info).timestamp_info = {
+        precision: 3 timezone: "Etc/UTC"
+      }
+  ];
+  optional string fdqannotated = 12 [
+      (nuna.schema.pb.column_data_annotation).dq_field = {
+        is_nullable: true is_ignored: true format: "\\w*"
+        enum_value: ["a", "b", "c"] regexp: "\\w*"
+      }
+    ];
+  repeated string frep_seq = 13;
+  repeated string frep_array = 14 [
+      (nuna.schema.pb.column_info).repeated_semantics = REPEATED_ARRAY
+    ];
+  repeated string frep_set = 15 [
+      (nuna.schema.pb.column_info).repeated_semantics = REPEATED_SET
+    ];
+  optional bytes fdecimal_bigint = 16  [
+      (nuna.schema.pb.column_info).column_type = TYPE_DECIMAL,
+      (nuna.schema.pb.column_info).decimal_info = {
+        precision: 30 scale: 0
+      }
+    ];
+  optional bytes fdecimal_default = 17  [
+      (nuna.schema.pb.column_info).column_type = TYPE_DECIMAL,
+      (nuna.schema.pb.column_info).decimal_info = {
+        precision: 30 scale: 20
+      }
+    ];
+  optional bytes fdecimal_bigdecimal = 18  [
+      (nuna.schema.pb.column_info).column_type = TYPE_DECIMAL,
+      (nuna.schema.pb.column_scala_annotation).java_type_name = "BigDecimal",
+      (nuna.schema.pb.column_info).decimal_info = {
+        precision: 30 scale: 20
+      }
+    ];
+  optional string with__original__name = 19 [
+      (nuna.schema.pb.column_scala_annotation).original_name = "field name"
+    ];
+  repeated string finitialized = 20 [
+      (nuna.schema.pb.column_scala_annotation).initializer = " = Seq()"
+    ];
+  optional string fwidth = 21 [
+      (nuna.schema.pb.column_data_annotation).width = 10
+    ];
+  optional string flob = 22 [
+      (nuna.schema.pb.column_data_annotation).is_lob = true
+    ];
+  optional string fcommented = 23 [
+      (nuna.schema.pb.column_data_annotation).comment = "Some comment"
+    ];
+  optional bool fboolean = 24;
+}

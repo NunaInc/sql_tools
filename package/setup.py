@@ -1,0 +1,54 @@
+#
+# nuna_sql_tools: Copyright 2022 Nuna Inc
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+"""Nuna Schema contains utilities to create and manipulate schemas.
+
+Check README.md for details.
+"""
+
+from setuptools import find_packages
+from setuptools import setup
+
+
+PROJECT = 'nuna_schema'
+with open('VERSION', 'r', encoding='utf-8') as f:
+    VERSION = f.read().strip()
+with open('requirements-dev.txt', 'r', encoding='utf-8') as f:
+    lines = [l.strip() for l in f.readlines()]
+    REQUIRED_PACKAGES = [l for l in lines if l and not l.startswith('#')]
+DOCLINES = __doc__.split('\n')
+ENTRY_POINTS = [
+    'sql_analyze-viewer=sql_analyze.viewer.viewer:main',
+]
+print(f'Required packages: {REQUIRED_PACKAGES}')
+
+setup(
+    name=PROJECT,
+    version=VERSION,
+    description=DOCLINES[0],
+    long_description='\n'.join(DOCLINES[2:]),
+    long_description_content_type="text/markdown",
+    url='https://nuna.com/',
+    download_url='https://gitlab.nuna.cloud/NunaHealth/schema',
+    author='Nuna Inc.',
+    author_email='catalin@nuna.com',
+    packages=find_packages(where='src'),
+    package_dir={'': 'src'},
+    entry_points = {
+        'console_scripts': ENTRY_POINTS,
+    },
+    install_requires=REQUIRED_PACKAGES,
+    zip_safe=False,
+)

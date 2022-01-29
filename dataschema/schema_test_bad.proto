@@ -1,0 +1,141 @@
+syntax = "proto2";
+import "dataschema/Schema.proto";
+
+package nuna.schema.test.pb;
+option java_package = "com.nuna.schema.test";
+
+
+// Some messages that don't validate
+message BadDecimalMissing {
+  optional bytes fdecimal = 11  [
+      (nuna.schema.pb.column_info).column_type = TYPE_DECIMAL
+    ];
+}
+message BadDecimalType {
+  optional int32 fint = 1  [
+      (nuna.schema.pb.column_info).decimal_info = {
+        precision: 50 scale: 0
+      }
+    ];
+}
+message BadDecimalPrecision {
+  optional bytes fdecimal = 1  [
+      (nuna.schema.pb.column_info).column_type = TYPE_DECIMAL,
+      (nuna.schema.pb.column_info).decimal_info = {
+        precision: 100 scale: 0
+      }
+    ];
+}
+message BadDecimalScale {
+  optional bytes fdecimal = 1  [
+      (nuna.schema.pb.column_info).column_type = TYPE_DECIMAL,
+      (nuna.schema.pb.column_info).decimal_info = {
+        precision: 50 scale: 60
+      }
+    ];
+}
+
+message BadTimestampPrecision {
+  optional sint64 ftimestamp = 1  [
+      (nuna.schema.pb.column_info).column_type = TYPE_DATETIME_64,
+      (nuna.schema.pb.column_info).timestamp_info = {
+        precision: 4 timezone: "Etc/UTC"
+      }
+  ];
+}
+
+message BadTimestampType {
+  optional string fstring = 1  [
+      (nuna.schema.pb.column_info).timestamp_info = {
+        precision: 4 timezone: "Etc/UTC"
+      }
+  ];
+}
+
+message BadLowCardinality {
+  optional int32 fint = 1  [
+      (nuna.schema.pb.column_clickhouse_annotation).is_low_cardinality = true
+  ];
+}
+
+message BadDeltaCompressionType {
+  optional string fstring = 1  [
+      (nuna.schema.pb.column_clickhouse_annotation).delta_compression_width = 2
+  ];
+}
+
+message BadDeltaCompressionValue {
+  optional int32 fint = 1  [
+      (nuna.schema.pb.column_clickhouse_annotation).delta_compression_width = 3
+  ];
+}
+
+message BadDeltaCompressionRange {
+  optional int32 fint = 1  [
+      (nuna.schema.pb.column_clickhouse_annotation).delta_compression_width = 8
+  ];
+}
+
+message BadDeltaCompressionLevel {
+  optional int32 fint = 1  [
+      (nuna.schema.pb.column_clickhouse_annotation)
+      .compression_type = COMPRESS_LZ4,
+      (nuna.schema.pb.column_clickhouse_annotation).compression_level = 4
+  ];
+}
+
+message BadOrderByEngine {
+  option (nuna.schema.pb.table_clickhouse_annotation) = {
+    engine: ENGINE_LOG
+    order_by_fields: 'id'
+  };
+  required int32 id = 1;
+}
+
+message BadPartitionByEngine {
+  option (nuna.schema.pb.table_clickhouse_annotation) = {
+    engine: ENGINE_LOG
+    partition_by_sql_expression: 'id'
+  };
+  required int32 id = 1;
+}
+
+message BadIndexGranularityEngine {
+  option (nuna.schema.pb.table_clickhouse_annotation) = {
+    engine: ENGINE_LOG
+    index_granularity: 8192
+  };
+  required int32 id = 1;
+}
+
+message BadOrderByField {
+  option (nuna.schema.pb.table_clickhouse_annotation) = {
+    engine: ENGINE_MERGE_TREE
+    order_by_fields: 'id'
+  };
+  optional int32 id = 1;
+}
+
+message BadPartitionByField {
+  option (nuna.schema.pb.table_clickhouse_annotation) = {
+    engine: ENGINE_MERGE_TREE
+    partition_by_sql_expression: 'id'
+  };
+  optional int32 id = 1;
+}
+
+message BadSampleByField {
+  option (nuna.schema.pb.table_clickhouse_annotation) = {
+    engine: ENGINE_MERGE_TREE
+    sample_by_sql_expression: 'id'
+  };
+  optional int32 id = 1;
+}
+
+message BadOrderByFieldName {
+  option (nuna.schema.pb.table_clickhouse_annotation) = {
+    engine: ENGINE_MERGE_TREE
+    order_by_fields: 'idd'
+  };
+  required int32 id = 1;
+}

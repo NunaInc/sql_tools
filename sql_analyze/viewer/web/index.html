@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>SQL analyze</title>
+    <link rel="stylesheet" href="/viewer.css"/>
+    <script src="./js/ace/ace.js"></script>
+    <script src="./js/viz/viz.js"></script>
+    <script src="./js/split/split.min.js"></script>
+    <script src="./js/svg-pan-zoom/svg-pan-zoom.min.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <div id="header">
+          <div id="options">
+            <label id="stocksql">Stock SQL files:
+              <select>
+                <option selected>[None]</option>
+              </select>
+            </label>
+           </p>
+           <button onclick="parseSQL()">Update</button>
+           &nbsp;<input type="checkbox" id="svg_direct"/>
+           &nbsp;<label for="svg_direct">Server-Side SVG</label>
+           &nbsp;<input type="checkbox" id="sql_highlight"/>
+           &nbsp;<label for="sql_highlight">Highlight Selection</label>
+           &nbsp<label id="dialect">Dialect:
+             <select>
+               <option selected>SparkSql</option>
+               <option>ClickHouse</option>
+             </select>
+           </label>
+           &nbsp;<label id="detail">Detail:
+             <select>
+               <option>1</option>
+               <option>2</option>
+               <option>3</option>
+               <option>4</option>
+               <option>5</option>
+               <option selected>6</option>
+               <option>7</option>
+               <option>8</option>
+               <option>9</option>
+               <option>10</option>
+             </select>
+           </label>
+           <p/>
+           &nbsp;
+           <label id="rankdir">
+              Direction:
+              <select>
+                <option selected>LR</option>
+                <option>TB</option>
+                <option>BT</option>
+                <option>RL</option>
+              </select>
+           </label>
+           &nbsp;
+           <label id="newrank">
+             New Rank:
+             <select>
+               <option selected>false</option>
+               <option>true</option>
+             </select>
+           </label>
+           &nbsp;
+           <label id="concentrate">
+             Concentrate Edges:
+             <select>
+               <option selected>false</option>
+               <option>true</option>
+             </select>
+           </label>
+           &nbsp;
+           <label id="clusterrank">
+             Cluster Rank:
+             <select>
+               <option selected>local</option>
+               <option>global</option>
+             </select>
+           </label>
+           &nbsp;
+           <label id="ratio">
+             Ratio:
+             <select>
+               <option selected>auto</option>
+               <option>expand</option>
+               <option>compress</option>
+               <option>0.25</option>
+               <option>0.5</option>
+               <option>0.75</option>
+               <option>1.0</option>
+               <option>1.5</option>
+               <option>2.0</option>
+               <option>4.0</option>
+             </select>
+           </label>
+           &nbsp;
+           <label id="size">
+             Size:
+             <select>
+               <option selected>ideal</option>
+               <option>10,8</option>
+               <option>8, 10</option>
+               <option>16,10</option>
+               <option>10, 16</option>
+               <option>24,16</option>
+               <option>16, 24</option>
+               <option>32,24</option>
+               <option>24, 32</option>
+               <option>48,32</option>
+               <option>32, 48</option>
+               <option>64,48</option>
+               <option>48, 64</option>
+               <option>96,64</option>
+               <option>64, 96</option>
+               <option>160,96</option>
+               <option>96, 160</option>
+               <option>
+             </select>
+           </label>
+
+          </div>
+      </div>
+      <div id="panes" class="split split-horizontal">
+        <div id="editor" class="split">-- Edit SQL here
+SELECT foo, bar FROM baz</div>
+        <div id="graph" class="split">
+          <div id="output">
+            <div id="error"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="./js/main.js"></script>
+  </body>
+</html>
