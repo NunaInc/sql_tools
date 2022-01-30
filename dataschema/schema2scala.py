@@ -208,7 +208,7 @@ class ScalaAnnotationClasses:
     width: Optional[str] = None
 
 
-def _bool_str(value: bool):
+def _BoolStr(value: bool):
     return 'true' if value else 'false'
 
 
@@ -251,9 +251,9 @@ class TableConverter:
             self, dq_field: Schema_pb2.ColumnDataAnnotation.DqField) -> str:
         args = []
         if dq_field.HasField('is_nullable'):
-            args.append(f'nullable = {_bool_str(dq_field.is_nullable)}')
+            args.append(f'nullable = {_BoolStr(dq_field.is_nullable)}')
         if dq_field.HasField('is_ignored'):
-            args.append(f'ignore = {_bool_str(dq_field.is_ignored)}')
+            args.append(f'ignore = {_BoolStr(dq_field.is_ignored)}')
         if dq_field.HasField('format'):
             value = strutil.EscapeString(dq_field.format)
             args.append(f'format = "{value}"')
@@ -367,7 +367,9 @@ class TableConverter:
             return column.name()
         return f'`{column.scala_annotation.original_name}`'
 
-    def to_scala(self, exports: TypeExports):
+    def to_scala(self, exports: Optional[TypeExports] = None):
+        if not exports:
+            exports = TypeExports()
         class_annotations = self._get_class_annotations()
         imports = ScalaImports()
         imports.add_imports(class_annotations.imports)
@@ -408,6 +410,19 @@ class TableConverter:
             '\n'.join(class_annotations.annotations),
             f'case class {self.table.name()}(\n{column_value}\n)'
         ]) + nested_classes_content, imports)
+
+
+def ConvertTable(
+        table: Schema.Table,
+        java_package: Optional[str] = None,
+        scala_annotations: Optional[ScalaAnnotationClasses] = None) -> str:
+    """Converts a Schema table to a scala snippet."""
+    converter = TableConverter(table, scala_annotations)
+    (classes, imports) = converter.to_scala()
+    if java_package is None:
+        java_package = table.info.java_package
+    return (f'package {java_package}\n'
+            f'{imports.to_scala(java_package)}\n\n{classes}')
 
 
 class _NestedNames:

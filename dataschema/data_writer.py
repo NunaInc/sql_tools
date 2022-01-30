@@ -81,7 +81,7 @@ class PrintWriter(BaseWriter):
 
     def write(self, table: Schema.Table, data: Any, file_object: Any):
         """Prints `data` to stdout."""
-        if isinstance(data, Iterable):
+        if not isinstance(data, Dict) and isinstance(data, Iterable):
             for ob in data:
                 print(ob)
         else:

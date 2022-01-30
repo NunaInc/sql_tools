@@ -23,11 +23,11 @@ from types import ModuleType
 from typing import Dict, List, Optional
 
 
-def get_indent(indent: int) -> str:
+def GetIndent(indent: int) -> str:
     return ' ' * indent
 
 
-def get_timestamp_str(column: Schema.Column) -> str:
+def GetTimestampStr(column: Schema.Column) -> str:
     info = column.timestamp_info()
     if info is None:
         return ''
@@ -86,7 +86,7 @@ class TableConverter:
         return f'Decimal{size}({info.scale})'
 
     def _get_timestamp_str(self, column: Schema.Column) -> str:
-        return get_timestamp_str(column)
+        return GetTimestampStr(column)
 
     def _get_compression_name(self, value: int) -> Optional[str]:
         if value == Schema_pb2.ColumnClickhouseAnnotation.COMPRESS_LZ4:
@@ -128,7 +128,7 @@ class TableConverter:
         """Returns a Clichouse SQL column specification for `column`."""
         s = ''
         if not type_only:
-            s += f'{get_indent(indent)}{column.name()} '
+            s += f'{GetIndent(indent)}{column.name()} '
         end = ''
         column_type = column.info.column_type
         if (column.info.label == Schema_pb2.ColumnInfo.LABEL_REPEATED and
@@ -170,7 +170,7 @@ class TableConverter:
                                             indent + 2,
                                             type_only=False))
                 sub_columns_str = ',\n'.join(sub_columns)
-                s += f'(\n{sub_columns_str}\n{get_indent(indent)})'
+                s += f'(\n{sub_columns_str}\n{GetIndent(indent)})'
         s += end
         if not type_only:
             codec = self._get_codec(column)
@@ -309,6 +309,14 @@ class FileConverter:
         for conv in self.converters:
             conv.validate()
         return True
+
+
+def ConvertTable(table: Schema.Table,
+                 table_name: str = '${database}.${table}',
+                 replication_params: str = '${replicationParams}',
+                 if_not_exists: Optional[bool] = False) -> str:
+    return TableConverter(table).to_sql(table_name, replication_params,
+                                        if_not_exists)
 
 
 class SchemaConverter:

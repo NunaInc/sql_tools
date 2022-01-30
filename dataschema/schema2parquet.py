@@ -146,6 +146,11 @@ def ConvertColumn(column: Schema.Column):
                          nullable=not non_nullable)
 
 
-def ConvertSchema(table: Schema.Table):
+def ConvertTable(table: Schema.Table):
     """Converts a python data Schema table to an arrow schema."""
     return pyarrow.schema([ConvertColumn(column) for column in table.columns])
+
+
+def ConvertSchema(table: Schema.Table):
+    """Backward compatible function - deprecated - do not use."""
+    return ConvertTable(table)

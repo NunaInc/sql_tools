@@ -24,7 +24,7 @@ class ParquetTest(unittest.TestCase):
 
     def test_schema2parquet(self):
         table = python2schema.ConvertDataclass(schema_test_data.TestProto)
-        pandas_schema = schema2pandas.ConvertSchema(table)
+        pandas_schema = schema2pandas.ConvertTable(table)
         self.assertEqual(
             pandas_schema, {
                 'id': pandas.Int64Dtype(),
@@ -36,7 +36,7 @@ class ParquetTest(unittest.TestCase):
                 'ffloat': pandas.Float32Dtype(),
                 'fstring': pandas.StringDtype(),
                 'fbytes': 'S',
-                'fdate': pandas.DatetimeTZDtype(tz='UTC'),
+                'fdate': 'O',
                 'ftimestamp': pandas.DatetimeTZDtype(tz='Etc/UTC'),
                 'fdqannotated': pandas.StringDtype(),
                 'frep_seq': 'O',

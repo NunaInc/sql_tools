@@ -42,7 +42,6 @@ _TYPE_MAPPING = {
     Schema_pb2.ColumnInfo.TYPE_UINT_64: lambda _: pandas.UInt64Dtype(),
     Schema_pb2.ColumnInfo.TYPE_FLOAT_32: lambda _: pandas.Float32Dtype(),
     Schema_pb2.ColumnInfo.TYPE_FLOAT_64: lambda _: pandas.Float64Dtype(),
-    Schema_pb2.ColumnInfo.TYPE_DATE: lambda _: pandas.DatetimeTZDtype(tz='UTC'),
     Schema_pb2.ColumnInfo.TYPE_DATETIME_64: _GetDateTimeType,
     Schema_pb2.ColumnInfo.TYPE_STRING: lambda _: pandas.StringDtype(),
     Schema_pb2.ColumnInfo.TYPE_BYTES: lambda _: 'S',
@@ -59,7 +58,7 @@ def ConvertColumn(column: Schema.Column):
     return _TYPE_MAPPING[column.info.column_type](column)
 
 
-def ConvertSchema(table: Schema.Table):
+def ConvertTable(table: Schema.Table):
     """Converts a python data Schema table to an arrow schema."""
     return {column.name(): ConvertColumn(column) for column in table.columns}
 
@@ -67,6 +66,6 @@ def ConvertSchema(table: Schema.Table):
 def ToDataFrame(data: Dict[str, List[Any]], table: Schema.Table):
     """For a dataframe-like map, this converts data to a pandas DataFrame
     keeping the original column types specified in table, as much as possible."""
-    pandas_schema = ConvertSchema(table)
+    pandas_schema = ConvertTable(table)
     return pandas.DataFrame(
         {k: pandas.array(v, dtype=pandas_schema[k]) for k, v in data.items()})

@@ -22,11 +22,11 @@ from sqlalchemy.schema import CreateTable
 
 EXPECTED_CREATE_TABLE = """
 CREATE TABLE "TestProto" (
-	id BIGINT NOT NULL,
+	id INTEGER NOT NULL,
 	fint32 INTEGER NOT NULL,
 	fsint32 INTEGER NOT NULL,
 	fint64 INTEGER NOT NULL,
-	fsint64 BIGINT,
+	fsint64 INTEGER,
 	fdouble REAL,
 	ffloat FLOAT,
 	fstring VARCHAR,
