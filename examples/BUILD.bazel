@@ -1,0 +1,30 @@
+package(default_visibility = ["//visibility:public"])
+
+load("@bazel_pylint//:pyrules.bzl", "py_lint_binary")
+load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
+load("@nuna_sql_tools_pip_deps//:requirements.bzl", "requirement")
+
+py_proto_library(
+    name = "example_py",
+    srcs = ["example.proto"],
+    deps = [
+        "//dataschema:SchemaProto_py",
+        "@com_google_protobuf//:protobuf_python",
+    ],
+)
+
+py_lint_binary(
+    name = "dataschema_example",
+    srcs = ["dataschema_example.py"],
+    rules = "//:pylintrc",
+    srcs_version = "PY3",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":example_py",
+        "//dataschema",
+        "//dataschema:data_writer",
+        "//dataschema:schema_synth",
+        "//sql_analyze/grammars/ClickHouse:parse_lib",
+        requirement("SQLAlchemy"),
+    ],
+)

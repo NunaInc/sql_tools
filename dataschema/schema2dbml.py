@@ -19,8 +19,8 @@ from dataschema import Schema, Schema_pb2, schema2sql
 from typing import List, Optional
 
 
-def get_indent(indent: int) -> str:
-    return schema2sql.get_indent(indent)
+def GetIndent(indent: int) -> str:
+    return schema2sql.GetIndent(indent)
 
 
 # DBML accepts any type name - so we use the Clickhouse types.
@@ -48,7 +48,7 @@ class TableConverter:
         """Returns a DBML column specification for `column`."""
         s = ''
         if not type_only:
-            s += f'{get_indent(indent)}{column.name()} '
+            s += f'{GetIndent(indent)}{column.name()} '
         end = ''
         notes = []
         column_type = column.info.column_type
@@ -85,7 +85,7 @@ class TableConverter:
                                              indent + 2,
                                              type_only=False))
                 sub_columns_str = ',\n'.join(sub_columns)
-                s += f'(\n{sub_columns_str}\n{get_indent(indent)})'
+                s += f'(\n{sub_columns_str}\n{GetIndent(indent)})'
         s += end
         if is_primary_key:
             notes.append('primary key')
@@ -122,3 +122,8 @@ class TableConverter:
         #          '    }\n')
         s += '}\n'
         return s
+
+
+def ConvertTable(table: Schema.Table, table_name: Optional[str] = None):
+    """Converts schema table to DBML."""
+    return TableConverter(table).to_dbml(table_name)

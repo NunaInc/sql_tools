@@ -498,3 +498,12 @@ def GetModuleInfo(name: str,
     """
     return ModuleInfo(
         name, [GetDataclassInfo(table, force_nested_types) for table in tables])
+
+
+def ConvertTable(table: Schema.Table,
+                 java_package: Optional[str] = None,
+                 force_nested_types: bool = False) -> str:
+    """Converts the table schema to python code snippetdclass."""
+    return '\n'.join(
+        ModuleInfo(table.name(), [GetDataclassInfo(table, force_nested_types)
+                                 ]).py_module_lines(java_package))

@@ -594,7 +594,7 @@ class FileGeneratorInfo:
                  count: int,
                  file_basename: Optional[str] = None,
                  extension: Optional[str] = None,
-                 num_shards: int = 0):
+                 num_shards: int = None):
         self.generator = generator
         self.count = count
         self.file_basename = file_basename

@@ -20,7 +20,7 @@ import decimal
 
 from dataschema import annotations
 from dataschema.entity import Annotate
-from typing import Optional
+from typing import List, Optional
 
 # All required basic data types
 Bool = bool
@@ -70,6 +70,12 @@ OptChUInt64 = Annotate(Optional[int], annotations.ClickhouseType('UInt64'))
 def Decimal(scale: int, precision: int) -> type:
     """Quickly build a decimal type."""
     return Annotate(decimal.Decimal, annotations.Decimal(scale, precision))
+
+
+def DecimalList(scale: int, precision: int) -> type:
+    """Quickly build a decimal type."""
+    return Annotate(List[decimal.Decimal],
+                    annotations.Decimal(scale, precision))
 
 
 def OptDecimal(scale: int, precision: int) -> type:

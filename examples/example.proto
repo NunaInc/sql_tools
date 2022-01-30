@@ -1,0 +1,22 @@
+syntax = "proto2";
+import "dataschema/Schema.proto";
+
+package nuna.schema.example;
+option java_package = "com.nuna.schema.example";
+
+message CustomerInfo {
+  required string customer_id = 1;
+  required int32 order_count = 2;
+  required int32 start_date = 3 [
+      (nuna.schema.pb.column_info).column_type = TYPE_DATE
+    ];
+  optional int32 end_date = 4 [
+      (nuna.schema.pb.column_info).column_type = TYPE_DATE
+    ];
+  repeated bytes last_payments = 5 [
+      (nuna.schema.pb.column_info) = {
+        column_type: TYPE_DECIMAL
+        decimal_info { precision: 10 scale: 2 }
+      }
+    ];
+}
