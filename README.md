@@ -37,17 +37,21 @@ Here is an exmple analysis:
 
 The general idea is to have a medium independent representation for
 a schema, and code to convert to/from different types of schemas.
-The main schema representation if defined in `Schema.py`, which
-includes the `Column` and `Table` classes, to represent a column
-and table in the schema. The data enclosed in these classes is
-also presented in the protocol buffers from `Schema.proto`, which
+The main schema representation if defined in
+[`Schema.py`](dataschema/Schema.py), which includes the `Column`
+and `Table` classes, to represent a column and table in the schema.
+The data enclosed in these classes is also presented in the protocol
+buffers from [`Schema.proto`](dataschema/Schema.proto), which
 are in fact used as substructures for the python classes.
 
-Some usage examples can be found in
+Some usage examples, which are detailed in this README, can be found in
 [examples/dataschema_example.py](examples/dataschema_example.py)
+
+### `Schema.Table` from Python [`dataclass`](https://docs.python.org/3/library/dataclasses.html).
 
 In Python, a table schema can be defined as a `dataclass`, with
 possible annotations allowed. For example lets create a dataclass
+schema for a fictional customer information structure:
 
 
 ```python
@@ -62,19 +66,20 @@ class CustomerInfo:
     last_payments: schema_types.DecimalList(10, 2)
 ```
 
-Can convert this to a `Schema.Table` structure using:
+This dataclass can be converted to a `Schema.Table` structure using:
 
 ```python
+from dataschema import python2schema
 table = python2schema.ConvertDataclass(CustomerInfo)
 ```
 
-This central format can be converted to a variety of schema representations,
-using the `schema2<format>` sub-modules in the `dataschema`:
+This central data format can be converted to a variety of schema representations,
+using the various `schema2FORMAT` sub-modules in the `dataschema` module.
 
 ### [ChickHouse](https://clickhouse.com/) `CREATE TABLE` SQL statements:
 
-This can be used to generate SQL code that can be sent directly to ClickHouse
-to create tables for your schema:
+This can be used to generate SQL code to be sent directly to ClickHouse
+for creating a table for storing customer info:
 
 ```python
 from dataschema import schema2sql
@@ -96,7 +101,7 @@ CREATE TABLE customers (
 ### Scala Case Class
 
 This can be used as a build step for generating `.scala` files for an
-Apache Spark project:
+[Apache Spark](https://spark.apache.org/) project:
 
 ```python
 from dataschema import schema2scala
@@ -110,7 +115,6 @@ package com.mycompany.example
 import java.sql.Date
 import javax.persistence.Id
 import org.apache.spark.sql.types.Decimal
-
 
 case class CustomerInfo(
   @Id
@@ -144,7 +148,7 @@ last_payments: list<element: decimal128(10, 2) not null>
 
 ### SQL Alchemy Table
 
-This instantiates a
+To instantiate a SQL Alchemy
 [Table Configuration](https://docs.sqlalchemy.org/en/13/orm/extensions/declarative/table_config.html):
 
 
@@ -169,7 +173,7 @@ CREATE TABLE "CustomerInfo" (
 ### DBML Table Specification
 
 To convert a `Schema.Table` to a [DBML](https://www.dbml.org/) table
-specification can use:
+specification use:
 
 ```python
 from dataschema import schema2dbml
@@ -190,8 +194,8 @@ Table CustomerInfo {
 
 ### Pandas Data Types
 
-Can convert to a dictionary of column names and
-[Pandas](https://pandas.pydata.org/) data types:
+Convert to a dictionary of column names and
+[Pandas](https://pandas.pydata.org/) data types with:
 
 ```python
 from dataschema import schema2pandas
@@ -246,7 +250,7 @@ class CustomerInfo:
 Another way of defining a schema table is through a
 [protocol buffer](https://developers.google.com/protocol-buffers)
 message. Please consult
-[`examples/example.proto`](https://developers.google.com/protocol-buffers)
+[`examples/example.proto`](examples/example.proto)
 on how to do it for our `CustomerInfo` structure. To process that use:
 
 ```python
@@ -314,7 +318,7 @@ with synthetic data generation specifications, and furthermore, upon
 instantiation of the table generators, these can be overridden.
 
 Here is an example of generating some out of the box synthetic data for our
-example schema table:
+example schema table, and writing it to some output files:
 
 ```python
 from dataschema import schema_synth
@@ -334,8 +338,9 @@ file_info = [
     for gen in generators
 ]
 
-from dataschema import data_writer
+# Generate data and write it to some files:
 
+from dataschema import data_writer
 # Generate some data in CSV format in the provided `output_dir`
 csv_file_names = schema_synth.GenerateFiles(
     file_info, data_writer.CsvWriter(), output_dir)
