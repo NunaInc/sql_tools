@@ -21,7 +21,9 @@ for parsing.
 ## Requirements:
 
 The project needs [Bazel](https://bazel.build/) for building, and
-requires Python 3.7 or higher.
+requires Python 3.7 or higher. The preferred way is to use
+[bazelisk](https://github.com/bazelbuild/bazelisk) launcher
+for Bazel.
 
 ## Quick Demo:
 
