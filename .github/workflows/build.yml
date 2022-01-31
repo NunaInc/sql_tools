@@ -11,8 +11,7 @@ jobs:
         with:
           path: "~/.cache/bazel"
           key: bazel
-      - run: python --version
-      - run: bazel --subcommands build //...
+      - run: bazel build --subcommands //...
       - run: bazel test --test_summary=detailed --test_output=errors //...
       
 
