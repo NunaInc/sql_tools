@@ -52,6 +52,10 @@ py_lint_test(
     ],
 )
 
+# Note: not using py_lint_library for this one, as pylint blocks
+#       on linux when importing google.protobuf packages that are
+#       provided by the pip dependencies, if the package itself is
+#       not installed on the build machine.
 py_library(
     name = "dataschema",
     srcs = [
@@ -71,7 +75,6 @@ py_library(
         "schema_types.py",
         "strutil.py",
     ],
-    # rules = "//:pylintrc",
     srcs_version = "PY3",
     deps = [
         ":SchemaProto_py",
