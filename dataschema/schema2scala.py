@@ -17,8 +17,7 @@
 
 import dataclasses
 import os
-from google.protobuf import descriptor, descriptor_pb2
-from dataschema import Schema, Schema_pb2, entity, proto2schema, python2schema, strutil
+from dataschema import Schema, Schema_pb2, entity, python2schema, strutil
 from types import ModuleType
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -124,22 +123,22 @@ class ScalaTypeInfo:
 
 
 class TypeExports:
-    """Keeps track of types exported by a set of proto files."""
+    """Keeps track of types exported by a set of module files."""
 
     def __init__(self):
-        # Maps from proto type name to ScalaTypeInfo.
+        # Maps from type name to ScalaTypeInfo.
         self._type_maps = {}
 
-    def add_export(self, proto_type_name: str, class_name: str,
-                   java_package: str):
-        self._type_maps[proto_type_name] = ScalaTypeInfo(
-            class_name, import_name=Schema.full_name(java_package, class_name))
+    def add_export(self, type_name: str, class_name: str, java_package: str):
+        self._type_maps[type_name] = ScalaTypeInfo(class_name,
+                                                   import_name=Schema.full_name(
+                                                       java_package,
+                                                       class_name))
 
-    def find_import(self, proto_type_name: str) -> ScalaTypeInfo:
-        if proto_type_name not in self._type_maps:
-            raise KeyError(
-                f'Cannot find exported proto name `{proto_type_name}`')
-        return self._type_maps[proto_type_name]
+    def find_import(self, type_name: str) -> ScalaTypeInfo:
+        if type_name not in self._type_maps:
+            raise KeyError(f'Cannot find exported type name `{type_name}`')
+        return self._type_maps[type_name]
 
     def find_import_unqualified(self, class_name: str) -> str:
         for type_info in self._type_maps.values():
@@ -433,7 +432,7 @@ class _NestedNames:
 
 
 class FileConverter:
-    """Converts a proto FileDescriptor to corresponding Scala case class file."""
+    """Converts a python dataclass file to corresponding Scala case class file."""
 
     def __init__(self,
                  scala_annotations: Optional[ScalaAnnotationClasses] = None):
@@ -443,29 +442,6 @@ class FileConverter:
         self.java_package = None
         self.nested_names = []
         self.scala_annotations = scala_annotations
-
-    def from_proto_file(
-            self,
-            file_descriptor: descriptor.FileDescriptor) -> 'FileConverter':
-        self.name = file_descriptor.name
-        self.basename = strutil.StripSuffix(
-            os.path.basename(file_descriptor.name), '.proto')
-        self.package = file_descriptor.package
-        self.java_package = file_descriptor.GetOptions().java_package
-        file_descriptor_pb = descriptor_pb2.FileDescriptorProto()
-        file_descriptor.CopyToProto(file_descriptor_pb)
-        self.converters = [
-            TableConverter(
-                proto2schema.ConvertMessage(
-                    file_descriptor.message_types_by_name[msg_pb.name]),
-                self.scala_annotations)
-            for msg_pb in file_descriptor_pb.message_type
-        ]
-        self.nested_names = [
-            self._build_proto_nested_names(msg_pb)
-            for msg_pb in file_descriptor_pb.message_type
-        ]
-        return self
 
     def from_module(self, py_module: ModuleType) -> 'FileConverter':
         self.name = py_module.__name__
@@ -486,14 +462,6 @@ class FileConverter:
         ]
         return self
 
-    def _build_proto_nested_names(
-            self, msg_pb: descriptor_pb2.DescriptorProto) -> _NestedNames:
-        nested_name = _NestedNames(msg_pb.name, [])
-        for nested_msg in msg_pb.nested_type:
-            nested_name.nested.append(
-                self._build_proto_nested_names(nested_msg))
-        return nested_name
-
     def _build_dataclass_nested_names(self, datacls: type) -> _NestedNames:
         nested_name = _NestedNames(datacls.__name__, [])
         for key in datacls.__dict__:
@@ -505,11 +473,11 @@ class FileConverter:
 
     def _fill_export(self, exports: TypeExports, names: _NestedNames,
                      package: str, java_package: str):
-        proto_name = Schema.full_name(package, names.name)
-        exports.add_export(proto_name, names.name, java_package)
+        type_name = Schema.full_name(package, names.name)
+        exports.add_export(type_name, names.name, java_package)
         sub_java_package = Schema.full_name(java_package, names.name)
         for nested in names.nested:
-            self._fill_export(exports, nested, proto_name, sub_java_package)
+            self._fill_export(exports, nested, type_name, sub_java_package)
 
     def fill_exports(self, exports: TypeExports):
         for names in self.nested_names:
@@ -536,25 +504,13 @@ class FileConverter:
 
 
 class SchemaConverter:
-    """Converts a list of file descriptors to Scala case class files."""
+    """Converts a list of dataclass files to Scala case class files."""
 
     def __init__(self,
                  scala_annotations: Optional[ScalaAnnotationClasses] = None):
         self.scala_annotations = scala_annotations
         self.file_converters = []
         self.exports = TypeExports()
-
-    def add_descriptors(self,
-                        file_descriptors: List[descriptor.FileDescriptor],
-                        export_only: Optional[bool] = False):
-        for fd in file_descriptors:
-            try:
-                fc = FileConverter(self.scala_annotations).from_proto_file(fd)
-                if not export_only:
-                    self.file_converters.append(fc)
-                fc.fill_exports(self.exports)
-            except ValueError as e:
-                raise ValueError(f'Processing proto file: {fd.nmae}') from e
 
     def add_modules(self,
                     py_modules: List[ModuleType],

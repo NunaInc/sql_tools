@@ -18,7 +18,6 @@
 import unittest
 from dataschema import proto2schema
 from dataschema import schema_example
-from dataschema import schema_example_pb2
 from dataschema import schema_test_data
 from dataschema import schema_test_pb2
 from dataschema import schema_test_bad_pb2
@@ -141,15 +140,6 @@ class SchemaTest(unittest.TestCase):
         self.assertEqual(result['TestJoinProto'], EXPECTED_SQL_TESTJOINPROTO)
         # print(f'TestProto: `{result['TestProto']}`')
         self.assertEqual(result['TestProto'], EXPECTED_SQL_TESTPROTO)
-
-    def test_generate_scala_proto(self):
-        fc = schema2scala.FileConverter(_DEFAULT_ANNOTATIONS).from_proto_file(
-            schema_test_pb2.DESCRIPTOR)
-        exports = schema2scala.TypeExports()
-        fc.fill_exports(exports)
-        contents = fc.to_scala(exports)
-        # print(f'contents: `{contents}`')
-        self.assertEqual(contents, EXPECTED_SCALA)
 
     def test_generate_sql_proto(self):
         fc = schema2sql.FileConverter().from_proto_file(
@@ -277,18 +267,6 @@ class SchemaTest(unittest.TestCase):
                 proto2schema.ConvertMessage(
                     schema_test_bad_pb2.BadOrderByFieldName.DESCRIPTOR))
             conv.validate()
-
-    def test_generate_example_proto(self):
-        fc = schema2scala.FileConverter(_DEFAULT_ANNOTATIONS).from_proto_file(
-            schema_example_pb2.DESCRIPTOR)
-        exports = schema2scala.TypeExports()
-        fc.fill_exports(exports)
-        print(f'Example Scala:\n{fc.to_scala(schema2scala.TypeExports())}')
-        fs = schema2sql.FileConverter().from_proto_file(
-            schema_example_pb2.DESCRIPTOR)
-        fs.validate()
-        for s in fs.to_sql().values():
-            print(f'Example Sql:\n{s}')
 
     def test_generate_example_dataclass(self):
         fc = schema2scala.FileConverter(_DEFAULT_ANNOTATIONS).from_module(

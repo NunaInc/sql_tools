@@ -1,7 +1,4 @@
 Faker==8.13.2
-GitPython==3.1.17
-boto3==1.18.45
-pylint==2.10.2
 absl-py==0.13.0
 protobuf==3.17.3
 numpy==1.21.2
