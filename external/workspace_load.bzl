@@ -45,7 +45,7 @@ def nuna_sql_tools_load_workspace():
     ## Pylinted targets
     http_archive(
         name = "bazel_pylint",
-        sha256 = "48e1153364bfaca1af58fb71374e5b4884fe094e902110abee0ee40eeb2a3f23",
-        strip_prefix = "bazel_pylint-0.0.2",
-        urls = ["https://github.com/NunaInc/bazel_pylint/archive/refs/tags/0.0.2.tar.gz"],
+        sha256 = "f3b086c7369228df77a68e0ee47f68ba634cbfaad11b01f48ad54a0cb1e6afbe",
+        strip_prefix = "bazel_pylint-0.0.3",
+        urls = ["https://github.com/NunaInc/bazel_pylint/archive/refs/tags/0.0.3.tar.gz"],
     )
