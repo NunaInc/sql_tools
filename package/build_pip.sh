@@ -25,45 +25,55 @@ function real_path() {
 }
 
 function prepare_src() {
-    TMPDIR="${1%/}"
-    mkdir -p "$TMPDIR/src/"
-    echo $(date) : "=== Preparing sources in dir: ${TMPDIR}"
+    PKGDIR="${1%/}"
+    mkdir -p "$PKGDIR/src/"
+    echo $(date) : "=== Preparing sources in dir: ${PKGDIR}"
     RUNFILES=bazel-bin/package/build_pip.runfiles/nuna_sql_tools
     for pkg in dataschema sql_analyze; do
-        cp -LR ${RUNFILES}/${pkg} "${TMPDIR}/src/"
-        touch ${TMPDIR}/src/${pkg}/__init__.py
+        cp -LR ${RUNFILES}/${pkg} "${PKGDIR}/src/"
+        touch ${PKGDIR}/src/${pkg}/__init__.py
     done
-    cp package/setup.py "${TMPDIR}"
-    cp requirements-dev.txt "${TMPDIR}"
+    cp package/setup.py "${PKGDIR}"
+    cp package/MANIFEST.in "${PKGDIR}"
+    cp requirements.txt "${PKGDIR}"
+    cp README.md "${PKGDIR}"
+    cp LICENSE "${PKGDIR}"
 }
 
 function build_wheel() {
-    TMPDIR="$1"
-    DEST="$2"
+    PKGDIR="$1"
+    DSTDIR="$2"
     VERSION="$3"
-    pushd ${TMPDIR} > /dev/null
-    echo "${VERSION}" > "${TMPDIR}/VERSION"
+    pushd ${PKGDIR} > /dev/null
+    rm -f nuna_sql_tools-*.whl
+    echo "${VERSION}" > VERSION
     echo $(date) : "=== Building wheel ${VERSION}"
-    python3 setup.py bdist_wheel ${PKG_NAME_FLAG}
-    mkdir -p ${DEST}
-    cp dist/* ${DEST}
+    python3 -m pip wheel -w ${PKGDIR} -e ${PKGDIR} --no-deps -vvv
+    mkdir -p ${DSTDIR}
+    whl=$(ls nuna_sql_tools-*.whl)
+    cp ${whl} ${DSTDIR}
     popd > /dev/null
-    echo $(date) : "=== Output wheel file is in: ${DEST}"
+    echo $(date) : "=== Output wheel file is in: ${DSTDIR}${whl}"
 }
 
 
 function main() {
-    SRCDIR="$(mktemp -d -t tmp.NUNA_SCHEMA)"
-    VERSION="${1}"
-    DSTDIR="$(real_path $2)"
+    PKGDIR="$(mktemp -d -t tmp.NUNA_SCHEMA)"    VERSION="${1}"
+    PKGDIR="${2}"
+    if [ "${PKGDIR}" == "" ]; then
+        PKGDIR="$(mktemp -d -t tmp.NUNA_SCHEMA)"
+    fi
+    DSTDIR="$(real_path $3)"
     if [ "${VERSION}" == "" ]; then
         VERSION=$(git tag -l  | tail -n 1)
     fi
     if [ "${VERSION}" == "" ]; then
-        VERSION=$(git log --oneline -1 | cut -d ' ' -f 1)
+        commit_hash=$(git log --oneline -1 | cut -d ' ' -f 1)
+        version=$(printf "%d" "0x${commit_hash}")
+        VERSION="0.0.dev${version}"
     fi
-    prepare_src "${SRCDIR}"
-    build_wheel "${SRCDIR}" "${DSTDIR}" "${VERSION}"
+    prepare_src "${PKGDIR}"
+    build_wheel "${PKGDIR}" "${DSTDIR}" "${VERSION}"
 }
 
 main "$@"

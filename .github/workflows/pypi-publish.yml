@@ -1,0 +1,34 @@
+name: pypi_publish
+on:
+  release:
+    types: [published]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latests
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: Install Pip
+        run: python3 -m pip install --upgrade pip
+      - uses: bazelbuild/setup-bazelisk@v1
+      - name: Mount bazel cache  # Optional
+        uses: actions/cache@v2
+        with:
+          path: "~/.cache/bazel"
+          key: bazel
+      - name: Bazel build
+        run: bazel build //...
+      - name: Packing
+        run: |
+          mkdir dist
+          ./package/build_pip.sh ${GITHUB_REF_NAME} $(pwd)/dist
+      - name: Publish package
+        uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          verbose: true

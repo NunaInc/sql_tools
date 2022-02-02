@@ -2,8 +2,10 @@
 # Edit at https://www.gitignore.io/?templates=r,node,java,scala,bazel,linux,macos,maven,emacs,python,gradle,packer,eclipse,vagrant,intellij,virtualenv,visualstudiocode
 
 # The generated whl file:
-nuna_schema-*.whl
-
+nuna_sql_tools-*.whl
+# Packing directory for pypi:
+dist/
+# Generated file that may get copied locally:
 dataschema/Schema_pb2.py
 
 # Intermediary grammar files:

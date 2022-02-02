@@ -19,6 +19,6 @@ def nuna_sql_tools_setup_workspace():
     bazel_pylint_setup_workspace()
     pip_install(
         name = "nuna_sql_tools_pip_deps",
-        requirements = "@nuna_sql_tools//:requirements-dev.txt",
+        requirements = "@nuna_sql_tools//:requirements.txt",
         timeout = 1200,
     )

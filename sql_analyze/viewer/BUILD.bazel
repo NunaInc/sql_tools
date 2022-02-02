@@ -21,6 +21,7 @@ load("@bazel_pylint//:pyrules.bzl", "py_lint_binary")
 py_lint_binary(
     name = "viewer",
     srcs = ["viewer.py"],
+    data = glob(["web/**"]),
     rules = "//:pylintrc",
     srcs_version = "PY3",
     deps = [

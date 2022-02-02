@@ -18,20 +18,25 @@
 Check README.md for details.
 """
 
+import glob
+
 from setuptools import find_packages
 from setuptools import setup
-
 
 PROJECT = 'nuna_sql_tools'
 with open('VERSION', 'r', encoding='utf-8') as f:
     VERSION = f.read().strip()
-with open('requirements-dev.txt', 'r', encoding='utf-8') as f:
+with open('requirements.txt', 'r', encoding='utf-8') as f:
     lines = [l.strip() for l in f.readlines()]
     REQUIRED_PACKAGES = [l for l in lines if l and not l.startswith('#')]
 DOCLINES = __doc__.split('\n')
 ENTRY_POINTS = [
     'sql_analyze-viewer=sql_analyze.viewer.viewer:main',
 ]
+PACKAGES = find_packages(where='src')
+print(f'Packages: {PACKAGES}')
+PACKAGE_DATA = glob.glob('src/sql_analyze/viewer/web/**/*.*', recursive=True)
+print(f'Package data: {PACKAGE_DATA}')
 print(f'Required packages: {REQUIRED_PACKAGES}')
 
 setup(
@@ -54,11 +59,11 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Intended Audience :: Developers',
     ],
-    packages=find_packages(where='src'),
+    packages=PACKAGES,
     package_dir={'': 'src'},
-    entry_points = {
-        'console_scripts': ENTRY_POINTS,
-    },
+    package_data={'sql_analyze.viewer': PACKAGE_DATA},
+    include_package_data=True,
+    entry_points={'console_scripts': ENTRY_POINTS},
     install_requires=REQUIRED_PACKAGES,
     zip_safe=False,
 )
