@@ -14,8 +14,8 @@ jobs:
           python-version: '3.7'
       - name: Install Pip
         run: |
-          set
           python -m pip install --upgrade pip
+          python3 -m pip install setuptools==60.6.0
       - uses: bazelbuild/setup-bazelisk@v1
       - name: Mount bazel cache  # Optional
         uses: actions/cache@v2
@@ -24,3 +24,4 @@ jobs:
           key: bazel
       - run: bazel build //...
       - run: bazel test --test_summary=detailed --test_output=errors //...
+      - run: ./package/build_pip.sh
