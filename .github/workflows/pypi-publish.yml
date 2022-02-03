@@ -14,8 +14,6 @@ jobs:
           python-version: '3.7'
       - name: Install Pip
         run: |
-          set
-          if [ -n "${{ env.CI_REF_NAME_SLUG }}" ]; then exit 1; fi
           python -m pip install --upgrade pip
       - uses: bazelbuild/setup-bazelisk@v1
       - name: Mount bazel cache  # Optional
@@ -28,8 +26,8 @@ jobs:
       - name: Packing
         run: |
           mkdir dist
-          echo "Ref name: ${{ env.CI_REF_NAME_SLUG }}"
-          ./package/build_pip.sh ${{ env.CI_REF_NAME_SLUG }} $(pwd)/dist
+          echo "Ref name: ${GITHUB_REF_NAME}"
+          ./package/build_pip.sh "${GITHUB_REF_NAME}" "$(pwd)/dist"
       - name: Publish package to TEST
         uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
         with:
