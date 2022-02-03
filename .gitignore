@@ -5,6 +5,7 @@
 nuna_sql_tools-*.whl
 # Packing directory for pypi:
 dist/
+package_build/
 # Generated file that may get copied locally:
 dataschema/Schema_pb2.py
 

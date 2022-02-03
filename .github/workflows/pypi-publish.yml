@@ -21,9 +21,9 @@ jobs:
         run: bazel build //...
       - name: Packing
         run: |
-          mkdir dist
+          mkdir dist package_build
           echo "Ref name: ${GITHUB_REF_NAME}"
-          ./package/build_pip.sh "${GITHUB_REF_NAME}" "$(pwd)/dist"
+          ./package/build_pip.sh "${GITHUB_REF_NAME}" "$(pwd)/package_build" "$(pwd)/dist"
       - name: Publish package to TEST
         uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
         with:

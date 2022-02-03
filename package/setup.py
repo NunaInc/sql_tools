@@ -15,7 +15,25 @@
 #
 """Nuna Sql Tools contains utilities to create and manipulate schemas and sql statements.
 
-Check README.md for details.
+This package contains Python modules for helping developers
+produce and maintain data analysis projects. In particular:
+
+* `dataschema`: a library for defining data schemas using Python
+dataclasses, that that can be easily converted between protobuffers,
+Scala case classes, sql (ClickHouse) create table statements,
+Parquet Arrow schemas and so on, from a central Python based
+representation. Includes facilities to generate sample date and
+compare schemas for validations.
+
+* `sql_analyze`: a library for analyzing SQL statements. In particular
+the raw SQL statments are parsed and converted to a Python based
+data structure. From here, they can be converted to a data graph,
+visualized, and information about the lineage of tables and columns
+can be infered. Support for now SparkSql and ClickHouse dialects
+for parsing.
+
+For more details please check the
+[GitHub project](https://github.com/NunaInc/sql_tools).
 """
 
 import glob
