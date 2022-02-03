@@ -66,11 +66,13 @@ function main() {
     DSTDIR="$(real_path $3)"
     if [ "${VERSION}" == "" ]; then
         VERSION=$(git tag -l  | tail -n 1)
-    fi
-    if [ "${VERSION}" == "" ]; then
         commit_hash=$(git log --oneline -1 | cut -d ' ' -f 1)
         version=$(printf "%d" "0x${commit_hash}")
-        VERSION="0.0.dev${version}"
+        if [ "${VERSION}" == "" ]; then
+            VERSION="0.0.dev${version}"
+        else
+            VERSION="${VERSION}.dev${version}"
+        fi
     fi
     prepare_src "${PKGDIR}"
     build_wheel "${PKGDIR}" "${DSTDIR}" "${VERSION}"

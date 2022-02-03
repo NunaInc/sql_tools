@@ -1,6 +1,7 @@
 include LICENSE
 include README.md
 graft src/sql_analyze/viewer/web
+graft src/sql_analyze/viewer/examples
 global-exclude *~
 global-exclude *.pyc
 global-exclude __pycache__

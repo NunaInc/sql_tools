@@ -32,6 +32,10 @@ visualized, and information about the lineage of tables and columns
 can be infered. Support for now SparkSql and ClickHouse dialects
 for parsing.
 
+To try out the SQL Analyze Viewer, which uses the `sql_analyze` library
+to visualize SQL statements, you can run `sql_analyze-viewer` after
+installing.
+
 For more details please check the
 [GitHub project](https://github.com/NunaInc/sql_tools).
 """
@@ -53,7 +57,10 @@ ENTRY_POINTS = [
 ]
 PACKAGES = find_packages(where='src')
 print(f'Packages: {PACKAGES}')
-PACKAGE_DATA = glob.glob('src/sql_analyze/viewer/web/**/*.*', recursive=True)
+PACKAGE_DATA = glob.glob(
+    'src/sql_analyze/viewer/web/**/*.*', recursive=True) + glob.glob(
+        'src/sql_analyze/viewer/examples/**/*.*', recursive=True)
+
 print(f'Package data: {PACKAGE_DATA}')
 print(f'Required packages: {REQUIRED_PACKAGES}')
 

@@ -32,9 +32,11 @@ from typing import Any, Dict, List
 
 FLAGS = flags.FLAGS
 flags.DEFINE_integer('port', 8000, 'Port for running the http server')
-flags.DEFINE_string('root_dir', 'sql_analyze/viewer/web/',
+flags.DEFINE_string('root_dir', os.path.join(os.path.dirname(__file__), 'web'),
                     'Root of document serving')
-flags.DEFINE_list('stocksql_dirs', '', 'Directories for stock sql lookup')
+flags.DEFINE_list('stocksql_dirs',
+                  [os.path.join(os.path.dirname(__file__), 'examples')],
+                  'Directories for stock sql lookup')
 flags.DEFINE_integer('max_cache_size', 10,
                      'Maximum cache of parsed sql statements')
 
@@ -194,7 +196,7 @@ def run_server(argv):
     global _SERVER
     _SERVER = SqlAnalyzeServer(FLAGS.max_cache_size, FLAGS.stocksql_dirs)
     with socketserver.TCPServer(('', FLAGS.port), SqlAnalyzeHandler) as httpd:
-        print(f'Serving at {FLAGS.port}')
+        print(f'Serving at {FLAGS.port} (use --port=<port> to change)')
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
