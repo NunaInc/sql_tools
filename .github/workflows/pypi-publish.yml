@@ -14,6 +14,8 @@ jobs:
           python-version: '3.7'
       - name: Install Pip
         run: |
+          set
+          if [ -n "${{ env.CI_REF_NAME_SLUG }}" ]; then exit 1; fi
           python -m pip install --upgrade pip
       - uses: bazelbuild/setup-bazelisk@v1
       - name: Mount bazel cache  # Optional

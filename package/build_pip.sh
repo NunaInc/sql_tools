@@ -58,10 +58,10 @@ function build_wheel() {
 
 
 function main() {
-    PKGDIR="$(mktemp -d -t tmp.NUNA_SCHEMA)"    VERSION="${1}"
+    VERSION="${1}"
     PKGDIR="${2}"
     if [ "${PKGDIR}" == "" ]; then
-        PKGDIR="$(mktemp -d -t tmp.NUNA_SCHEMA)"
+        PKGDIR="$(mktemp -d -t tmp.NUNA_SQL_TOOLS.XXXXXXXX)"
     fi
     DSTDIR="$(real_path $3)"
     if [ "${VERSION}" == "" ]; then
