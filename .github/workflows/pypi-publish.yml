@@ -26,7 +26,7 @@ jobs:
         run: |
           echo "Packaging with ref name: ${{ env.GITHUB_REF_NAME }}"
           mkdir dist
-          ./package/build_pip.sh ${{ env.GITHUB_REF_NAME }} $(pwd)/dist
+          ./package/build_pip.sh ${{ env }} $(pwd)/dist
       - name: Publish package to TEST
         uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
         with:
