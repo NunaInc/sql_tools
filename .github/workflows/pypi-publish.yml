@@ -17,12 +17,7 @@ jobs:
           python -m pip install --upgrade pip
           python3 -m pip install setuptools==60.6.0
       - uses: bazelbuild/setup-bazelisk@v1
-      - name: Mount bazel cache  # Optional
-        uses: actions/cache@v2
-        with:
-          path: "~/.cache/bazel"
-          key: bazel
-      - name: Bazel build
+        name: Bazel build
         run: bazel build //...
       - name: Packing
         run: |
