@@ -8,14 +8,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Environment
-        run: echo "Environment: ${{ env }}"
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.7'
       - name: Install Pip
-        run: python3 -m pip install --upgrade pip
+        run: |
+	   echo "Environment: ${{ env }}"
+	   python -m pip install --upgrade pip
       - uses: bazelbuild/setup-bazelisk@v1
       - name: Mount bazel cache  # Optional
         uses: actions/cache@v2
