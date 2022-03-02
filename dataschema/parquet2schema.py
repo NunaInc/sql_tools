@@ -184,7 +184,7 @@ def _FieldStructTable(field: pyarrow.Field, table_full_name: str,
 
 
 def ConvertField(field: pyarrow.Field, table_full_name: str,
-                 java_class_name: str):
+                 java_class_name: str) -> Schema.Column:
     """Converts an arrow table schema field to a schema column."""
     column = Schema.Column()
     column.field = field

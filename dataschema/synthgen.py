@@ -680,7 +680,7 @@ class ToBytesGenerator(ConvertGenerator):
 
     def __init__(self, rand: numpy.random.Generator, child: Generator):
         super().__init__(rand, child, Names.TOBYTES,
-                         lambda s: bytes(s, 'utf-8'), str, bytes)
+                         lambda s: bytes(s, 'utf-8'), [str], bytes)
 
 
 class ChoiceGenerator(Generator):
@@ -1643,6 +1643,7 @@ _CLASS_MAP = {
     Names.TODATETIME: ToDateTimeGenerator,
     Names.TODECIMAL: ToDecimalGenerator,
     Names.TOBOOL: ToBoolGenerator,
+    Names.TOBYTES: ToBytesGenerator,
     Names.TOSTRING: ToStringGenerator,
     Names.CHOICE: ChoiceGenerator,
     Names.STR: StringGenerator,

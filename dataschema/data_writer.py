@@ -43,6 +43,20 @@ class WriterType(IntEnum):
     PARQUET = 3
     JSON = 4
     PICKLE = 5
+    SQLALCHEMY = 6
+
+
+def _is_decimal_column(column):
+    for value in column:
+        if value is not None:
+            return isinstance(value, decimal.Decimal)
+    return False
+
+
+def _decimals_to_str(dataframe):
+    for column in dataframe.columns:
+        if _is_decimal_column(dataframe[column]):
+            dataframe[column] = [str(value) for value in dataframe[column]]
 
 
 class BaseWriter:
@@ -102,6 +116,7 @@ class CsvWriter(BaseWriter):
     """
 
     def __init__(self,
+                 convert_decimals: bool = False,
                  sep: str = ',',
                  na_rep: str = '',
                  float_format: Optional[str] = None,
@@ -118,6 +133,7 @@ class CsvWriter(BaseWriter):
                  doublequote: bool = True,
                  storage_options: Optional[Dict[Any, Any]] = None):
         super().__init__()
+        self.convert_decimals = convert_decimals
         self.sep = sep
         self.na_rep = na_rep
         self.float_format = float_format
@@ -138,6 +154,8 @@ class CsvWriter(BaseWriter):
               file_object: str):
         """Writes `data`, which is in the provided `table` schema to a file."""
         df = schema2pandas.ToDataFrame(data, table)
+        if self.convert_decimals:
+            _decimals_to_str(df)
         df.to_csv(file_object,
                   sep=self.sep,
                   na_rep=self.na_rep,
@@ -287,10 +305,15 @@ class PickleWriter(BaseWriter):
 
 
 class ParquetWriter(BaseWriter):
-    """Writes generated data to a parquet file, according to options."""
+    """Writes generated data to a parquet file, according to options.
+
+    If you write a file intended for PySpark, use no_uint - as PySpark
+    does not support uint types.
+    """
 
     def __init__(
             self,
+            no_uint: bool = False,
             # Options per pyarrow.parquet.ParquetWriter. Details:
             # https://arrow.apache.org/docs/python/generated
             #        /pyarrow.parquet.ParquetWriter.html
@@ -319,6 +342,7 @@ class ParquetWriter(BaseWriter):
             hdfs_host: Optional[str] = None,
             hdfs_port: Optional[int] = None):
         super().__init__()
+        self.no_uint = no_uint
         self.version = version
         self.use_dictionary = use_dictionary
         self.compression = compression
@@ -349,7 +373,7 @@ class ParquetWriter(BaseWriter):
             buffer_size=self.file_buffer_size,
             metadata=self.file_metadata)
         df = schema2pandas.ToDataFrame(data, table)
-        schema = schema2parquet.ConvertSchema(table)
+        schema = schema2parquet.ConvertTable(table, self.no_uint)
         arrow_table = pyarrow.Table.from_pandas(df, schema=schema)
         writer = parquet.ParquetWriter(
             output_stream,
@@ -394,3 +418,40 @@ class ParquetWriter(BaseWriter):
 
     def extension(self) -> str:
         return '.parquet'
+
+
+class SqlAlchemyWriter(BaseWriter):
+    """Writes data to a sql alchemy table, via pandas.Dataframe.to_sql"""
+
+    def __init__(self,
+                 conn: Any,
+                 schema: Optional[str] = None,
+                 if_exists: Optional[str] = 'append',
+                 index: bool = False,
+                 index_label: Optional[str] = None,
+                 chunksize: Optional[int] = None):
+        super().__init__()
+        self.conn = conn
+        self.schema = schema
+        self.if_exists = if_exists
+        self.index = index
+        self.index_label = index_label
+        self.chunksize = chunksize
+
+    def writer_type(self):
+        return WriterType.SQLALCHEMY
+
+    def data_types(self):
+        return (InputType.DATAFRAME,)
+
+    def write(self, table: Schema.Table, data: Dict[Any, Any],
+              file_object: str):
+        df = schema2pandas.ToDataFrame(data, table)
+        _decimals_to_str(df)
+        df.to_sql(file_object,
+                  self.conn,
+                  schema=self.schema,
+                  if_exists=self.if_exists,
+                  index=self.index,
+                  index_label=self.index_label,
+                  chunksize=self.chunksize)

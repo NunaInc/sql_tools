@@ -34,14 +34,14 @@ NONE_PROB = [
 ]
 EXPECTED_TABLE_GEN = ('nested', {
     'id': schema_synth.DEFAULT_INT_ID,
-    'fint32': schema_synth.DEFAULT_INT,
+    'fint32': schema_synth.DEFAULT_UINT,
     'fsint32': schema_synth.DEFAULT_INT,
-    'fint64': schema_synth.DEFAULT_INT,
+    'fint64': schema_synth.DEFAULT_UINT,
     'fsint64': ('choice', ([schema_synth.DEFAULT_INT, None], NONE_PROB)),
     'fdouble': ('choice', ([schema_synth.DEFAULT_FLOAT, None], NONE_PROB)),
     'ffloat': ('choice', ([schema_synth.DEFAULT_FLOAT, None], NONE_PROB)),
     'fstring': ('choice', ([schema_synth.DEFAULT_STRING, None], NONE_PROB)),
-    'fbytes': ('choice', ([schema_synth.DEFAULT_STRING, None], NONE_PROB)),
+    'fbytes': ('choice', ([schema_synth.DEFAULT_BYTES, None], NONE_PROB)),
     'fdate': ('choice', ([schema_synth.DEFAULT_DATE, None], NONE_PROB)),
     'ftimestamp': ('choice', ([schema_synth.DEFAULT_DATETIME,
                                None], NONE_PROB)),
@@ -121,7 +121,7 @@ class SynthSchemaTest(unittest.TestCase):
                     {  # internally we have dicts
                         'foo': 20,
                         'bar': ('choice', ([('str', 8), None], [0.9, 0.1])),
-                        'baz': ('array', (('int', (0, 10000)), 3))
+                        'baz': ('array', (('int', (0, 32767)), 3))
                     })
             })
         self.assertEqual(gen, expected_b_gen)
@@ -237,7 +237,7 @@ class SynthSchemaTest(unittest.TestCase):
                             'b_id': expected_b_id,
                             'joiner': expected_joiner
                         }),
-                        'name': ('int', (0, 10000))
+                        'name': ('int', (0, 32767))
                     })]
         self.assertEqual([g.table.name() for g in gens], ['A', 'B', 'C', 'D'])
         self.assertEqual([g.generator.save() for g in gens], expected)

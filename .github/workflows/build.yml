@@ -1,8 +1,5 @@
 name: bazel_build
-on:
-  push:
-    branches:
-      - main
+on: [push]
 jobs:
   bazel-build-test:
     runs-on: ubuntu-latest
@@ -15,7 +12,11 @@ jobs:
       - name: Install Pip
         run: |
           python -m pip install --upgrade pip
-          python -m pip install setuptools==60.6.0 wheel==0.37.1 pylint==2.10.2
+          python -m pip install setuptools==60.6.0 wheel==0.37.1
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'zulu'
+          java-version: '8'
       - uses: bazelbuild/setup-bazelisk@v1
       - name: Bazel build
         run: bazel build //...

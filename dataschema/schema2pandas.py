@@ -24,7 +24,7 @@ from typing import Any, Dict, List
 
 
 def _GetDateTimeType(column: Schema.Column):
-    tz = None
+    tz = 'Etc/UTC'
     if column.info.timestamp_info.timezone:
         tz = column.info.timestamp_info.timezone
     return pandas.DatetimeTZDtype(tz=tz)
@@ -44,7 +44,7 @@ _TYPE_MAPPING = {
     Schema_pb2.ColumnInfo.TYPE_FLOAT_64: lambda _: pandas.Float64Dtype(),
     Schema_pb2.ColumnInfo.TYPE_DATETIME_64: _GetDateTimeType,
     Schema_pb2.ColumnInfo.TYPE_STRING: lambda _: pandas.StringDtype(),
-    Schema_pb2.ColumnInfo.TYPE_BYTES: lambda _: 'S',
+    Schema_pb2.ColumnInfo.TYPE_BYTES: lambda _: 'V',
 }
 
 
@@ -56,6 +56,15 @@ def ConvertColumn(column: Schema.Column):
         # Anything but basic types is an 'object':
         return 'O'
     return _TYPE_MAPPING[column.info.column_type](column)
+
+
+def ConvertColumnUnderlyingType(column: Schema.Column):
+    if column.info.column_type in _TYPE_MAPPING:
+        return _TYPE_MAPPING[column.info.column_type](column)
+    if column.info.column_type in (Schema_pb2.ColumnInfo.TYPE_ARRAY,
+                                   Schema_pb2.ColumnInfo.TYPE_SET):
+        return ConvertColumnUnderlyingType(column.fields[0])
+    return 'O'
 
 
 def ConvertTable(table: Schema.Table):

@@ -111,7 +111,7 @@ EXPECTED_SQL_TESTPROTO = """CREATE TABLE ${database}.${table} (
   fwidth Nullable(String),
   flob Nullable(String),
   fcommented Nullable(String),
-  fboolean Nullable(UInt8)
+  fboolean_sql Nullable(UInt8)
 )
 
 ENGINE = ReplicatedMergeTree(${replicationParams})

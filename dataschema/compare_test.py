@@ -49,21 +49,24 @@ class CompareTest(unittest.TestCase):
         self.assertEqual([d.code for d in ta.compare(ta)], [])
         self.assertEqual(
             [d.code for d in ta.compare(tb)],
-            [Schema.SchemaDiffCode.NAMES, Schema.SchemaDiffCode.LABEL])
+            [Schema.SchemaDiffCode.TABLE_NAMES, Schema.SchemaDiffCode.LABEL])
         self.assertEqual(
             [d.code for d in ta.compare(tc)],
-            [Schema.SchemaDiffCode.NAMES, Schema.SchemaDiffCode.LABEL])
+            [Schema.SchemaDiffCode.TABLE_NAMES, Schema.SchemaDiffCode.LABEL])
         self.assertEqual([d.code for d in tb.compare(ta)], [
-            Schema.SchemaDiffCode.NAMES, Schema.SchemaDiffCode.LABEL_CONVERTIBLE
+            Schema.SchemaDiffCode.TABLE_NAMES,
+            Schema.SchemaDiffCode.LABEL_CONVERTIBLE
         ])
         self.assertEqual(
             [d.code for d in tb.compare(tc)],
-            [Schema.SchemaDiffCode.NAMES, Schema.SchemaDiffCode.LABEL])
+            [Schema.SchemaDiffCode.TABLE_NAMES, Schema.SchemaDiffCode.LABEL])
         self.assertEqual([d.code for d in tc.compare(ta)], [
-            Schema.SchemaDiffCode.NAMES, Schema.SchemaDiffCode.LABEL_CONVERTIBLE
+            Schema.SchemaDiffCode.TABLE_NAMES,
+            Schema.SchemaDiffCode.LABEL_CONVERTIBLE
         ])
         self.assertEqual([d.code for d in tc.compare(tb)], [
-            Schema.SchemaDiffCode.NAMES, Schema.SchemaDiffCode.LABEL_CONVERTIBLE
+            Schema.SchemaDiffCode.TABLE_NAMES,
+            Schema.SchemaDiffCode.LABEL_CONVERTIBLE
         ])
 
     def test_compare_decimal(self):
@@ -86,25 +89,25 @@ class CompareTest(unittest.TestCase):
         self.assertEqual([d.code for d in ta.compare(ta)], [])
         self.assertEqual(
             [d.code for d in ta.compare(tb)],
-            [Schema.SchemaDiffCode.NAMES, Schema.SchemaDiffCode.DECIMAL])
+            [Schema.SchemaDiffCode.TABLE_NAMES, Schema.SchemaDiffCode.DECIMAL])
         self.assertEqual([d.code for d in ta.compare(tc)], [
-            Schema.SchemaDiffCode.NAMES, Schema.SchemaDiffCode.DECIMAL,
+            Schema.SchemaDiffCode.TABLE_NAMES, Schema.SchemaDiffCode.DECIMAL,
             Schema.SchemaDiffCode.DECIMAL
         ])
         self.assertEqual([d.code for d in tb.compare(ta)], [
-            Schema.SchemaDiffCode.NAMES,
+            Schema.SchemaDiffCode.TABLE_NAMES,
             Schema.SchemaDiffCode.DECIMAL_CONVERTIBLE
         ])
         self.assertEqual(
             [d.code for d in tb.compare(tc)],
-            [Schema.SchemaDiffCode.NAMES, Schema.SchemaDiffCode.DECIMAL])
+            [Schema.SchemaDiffCode.TABLE_NAMES, Schema.SchemaDiffCode.DECIMAL])
         self.assertEqual([d.code for d in tc.compare(ta)], [
-            Schema.SchemaDiffCode.NAMES,
+            Schema.SchemaDiffCode.TABLE_NAMES,
             Schema.SchemaDiffCode.DECIMAL_CONVERTIBLE,
             Schema.SchemaDiffCode.DECIMAL_CONVERTIBLE
         ])
         self.assertEqual([d.code for d in tc.compare(tb)], [
-            Schema.SchemaDiffCode.NAMES,
+            Schema.SchemaDiffCode.TABLE_NAMES,
             Schema.SchemaDiffCode.DECIMAL_CONVERTIBLE
         ])
 
@@ -131,10 +134,10 @@ class CompareTest(unittest.TestCase):
         self.assertEqual([d.code for d in ta.compare(ta)], [])
         self.assertEqual(
             [d.code for d in ta.compare(tb)],
-            [Schema.SchemaDiffCode.NAMES, Schema.SchemaDiffCode.DATETIME])
+            [Schema.SchemaDiffCode.TABLE_NAMES, Schema.SchemaDiffCode.DATETIME])
         self.assertEqual(
             [d.code for d in ta.compare(tc)],
-            [Schema.SchemaDiffCode.NAMES, Schema.SchemaDiffCode.DATETIME])
+            [Schema.SchemaDiffCode.TABLE_NAMES, Schema.SchemaDiffCode.DATETIME])
 
     def test_not_found(self):
 
@@ -151,7 +154,8 @@ class CompareTest(unittest.TestCase):
         ta = python2schema.ConvertDataclass(A)
         tb = python2schema.ConvertDataclass(B)
         self.assertEqual([d.code for d in ta.compare(tb)], [
-            Schema.SchemaDiffCode.NAMES, Schema.SchemaDiffCode.NOT_FOUND_DEST,
+            Schema.SchemaDiffCode.TABLE_NAMES,
+            Schema.SchemaDiffCode.NOT_FOUND_DEST,
             Schema.SchemaDiffCode.NOT_FOUND_SRC
         ])
         self.assertEqual([d.code for d in ta.columns[1].compare(tb.columns[1])],
@@ -170,7 +174,7 @@ class CompareTest(unittest.TestCase):
         ta = python2schema.ConvertDataclass(A)
         tb = python2schema.ConvertDataclass(B)
         self.assertEqual([d.code for d in ta.compare(tb)], [
-            Schema.SchemaDiffCode.NAMES,
+            Schema.SchemaDiffCode.TABLE_NAMES,
             Schema.SchemaDiffCode.REPEATED_STRUCT_MISMATCH
         ])
 
@@ -187,7 +191,7 @@ class CompareTest(unittest.TestCase):
         ta = python2schema.ConvertDataclass(A)
         tb = python2schema.ConvertDataclass(B)
         self.assertEqual([d.code for d in ta.compare(tb)], [
-            Schema.SchemaDiffCode.NAMES,
+            Schema.SchemaDiffCode.TABLE_NAMES,
             Schema.SchemaDiffCode.ARRAY_SET_MISMATCH
         ])
 
@@ -264,7 +268,7 @@ class CompareTest(unittest.TestCase):
         ta = python2schema.ConvertDataclass(A)
         tb = python2schema.ConvertDataclass(B)
         self.assertEqual([d.code for d in ta.compare(tb)], [
-            Schema.SchemaDiffCode.NAMES,
+            Schema.SchemaDiffCode.TABLE_NAMES,
         ] + [Schema.SchemaDiffCode.TYPES_DIFFERENT_CONVERTIBLE] * 30)
 
 

@@ -21,8 +21,9 @@ composed data types like map or nested.
 from dataschema import Schema_pb2, Schema
 from sqlalchemy.types import (ARRAY, BOOLEAN, DATE, DATETIME, DECIMAL, FLOAT,
                               INTEGER, JSON, REAL, SMALLINT, VARCHAR, VARBINARY)
-from sqlalchemy import Column, Table
+from sqlalchemy import Column, MetaData, Table
 from sqlalchemy.ext.declarative import declarative_base
+from typing import Optional
 
 Base = declarative_base()
 
@@ -77,20 +78,29 @@ def ConvertColumn(column: Schema.Column, is_primary_key: bool = None) -> Column:
         nullable = True
     elif column.data_annotation.dq_field.is_nullable:
         nullable = True
-    return Column(column.info.name,
+    return Column(column.sql_name(),
                   _GetColumnType(column),
                   nullable=nullable,
                   primary_key=is_primary_key)
 
 
-def ConvertTable(table: Schema.Table) -> Table:
+def ConvertTable(table: Schema.Table,
+                 table_name: Optional[str] = None,
+                 meta: Optional[MetaData] = None) -> Table:
     """Converts a python data Schema table to an arrow schema."""
-    id_columns = {column.name() for column in table.columns if column.is_id()}
+    id_columns = {
+        column.sql_name() for column in table.columns if column.is_id()
+    }
     # sqlalchemy requires a primary key.
     if not id_columns:
-        id_columns = {column.name() for column in table.columns}
+        id_columns = {column.sql_name() for column in table.columns}
     columns = [
         ConvertColumn(column,
-                      column.name() in id_columns) for column in table.columns
+                      column.sql_name() in id_columns)
+        for column in table.columns
     ]
-    return Table(table.info.name, Base.metadata, *columns)
+    if meta is None:
+        meta = Base.metadata
+    if table_name is None:
+        table_name = table.info.name
+    return Table(table_name, meta, *columns)

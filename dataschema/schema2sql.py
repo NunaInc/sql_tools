@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""Converts Schema to Sql create table statement."""
+"""Converts Schema to Clickhouse specific SQL create table statement."""
 
 import dataclasses
 import os
@@ -128,7 +128,7 @@ class TableConverter:
         """Returns a Clichouse SQL column specification for `column`."""
         s = ''
         if not type_only:
-            s += f'{GetIndent(indent)}{column.name()} '
+            s += f'{GetIndent(indent)}{column.sql_name()} '
         end = ''
         column_type = column.info.column_type
         if (column.info.label == Schema_pb2.ColumnInfo.LABEL_REPEATED and
