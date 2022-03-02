@@ -74,10 +74,13 @@ py_lint_library(
         "entity.py",
         "parquet2schema.py",
         "proto2schema.py",
+        "pyspark2schema.py",
         "python2schema.py",
         "schema2dbml.py",
+        "schema2expectations.py",
         "schema2pandas.py",
         "schema2parquet.py",
+        "schema2pyspark.py",
         "schema2python.py",
         "schema2scala.py",
         "schema2sql.py",
@@ -93,9 +96,11 @@ py_lint_library(
     deps = [
         ":SchemaProto_py",
         ":synthgen",
+        requirement("great_expectations"),
         requirement("pandas"),
         requirement("protobuf"),
         requirement("pyarrow"),
+        requirement("pyspark"),
         requirement("SQLAlchemy"),
     ],
 )
@@ -205,6 +210,19 @@ py_lint_test(
 )
 
 py_lint_test(
+    name = "pyspark_test",
+    timeout = "short",
+    srcs = ["pyspark_test.py"],
+    rules = "//:pylintrc",
+    srcs_version = "PY3",
+    deps = [
+        ":dataschema",
+        ":schema_example",
+        ":schema_test_data",
+    ],
+)
+
+py_lint_test(
     name = "pandas_test",
     timeout = "short",
     srcs = ["pandas_test.py"],
@@ -235,6 +253,7 @@ py_lint_library(
     srcs_version = "PY3",
     deps = [
         ":dataschema",
+        requirement("SQLAlchemy"),
         requirement("pyarrow"),
     ],
 )
@@ -287,6 +306,7 @@ py_lint_test(
     deps = [
         ":data_writer",
         ":schema_synth",
+        requirement("SQLAlchemy"),
         requirement("pandas"),
     ],
 )
@@ -313,5 +333,21 @@ py_lint_test(
     deps = [
         ":dataschema",
         ":schema_test_data",
+    ],
+)
+
+py_lint_test(
+    name = "expectations_test",
+    timeout = "short",
+    srcs = ["expectations_test.py"],
+    rules = "//:pylintrc",
+    srcs_version = "PY3",
+    deps = [
+        ":data_writer",
+        ":dataschema",
+        ":schema_synth",
+        ":schema_test_data",
+        requirement("great_expectations"),
+        requirement("SQLAlchemy"),
     ],
 )

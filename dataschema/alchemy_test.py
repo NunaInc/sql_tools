@@ -45,7 +45,7 @@ CREATE TABLE "TestProto" (
 	fwidth VARCHAR,
 	flob VARCHAR,
 	fcommented VARCHAR,
-	fboolean BOOLEAN,
+	fboolean_sql BOOLEAN,
 	PRIMARY KEY (id)
 )
 

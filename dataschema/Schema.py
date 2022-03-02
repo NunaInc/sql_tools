@@ -53,6 +53,7 @@ class SourceType(Enum):
     ARROW = 3
     ARROW_STRUCT = 4
     SQL_CREATE_TABLE = 5
+    PYSPARK = 6
 
 
 class SchemaDiffCode(Enum):
@@ -75,20 +76,24 @@ class SchemaDiffCode(Enum):
     #   - with more precision in destination.
     DECIMAL_CONVERTIBLE = 7
     # Differences in Timestamp precision or scale.
-    DATETIME = 7
-    # Differences in table / column names.
+    DATETIME = 8
+    # Differences in column names.
     # Note that when comparing tables directly, cannot get a NAMES difference for
     # its columns - would get a NOT_FOUND_xxx error.
-    NAMES = 8
+    NAMES = 9
     # A set in source or destination is represented as an array on the other side.
-    ARRAY_SET_MISMATCH = 9
+    ARRAY_SET_MISMATCH = 10
     # A set or array in source or destination is represented as repeated on the
     # other side.
-    REPEATED_STRUCT_MISMATCH = 10
+    REPEATED_STRUCT_MISMATCH = 11
     # Totally incompatible types.
-    TYPES_INCOMPATIBLE = 11
+    TYPES_INCOMPATIBLE = 12
     # Different types, but convertible from source to destination.
-    TYPES_DIFFERENT_CONVERTIBLE = 12
+    TYPES_DIFFERENT_CONVERTIBLE = 13
+    # Differences between integer type - same precision but different signs
+    TYPES_SIGNLOSS_CONVERTIBLE = 14
+    # Differences between table names
+    TABLE_NAMES = 15
 
 
 class SchemaDiff:
@@ -105,11 +110,15 @@ class SchemaDiff:
     def is_convertible(self):
         """If this difference does not prevent a direct conversion."""
         return self.code in {
-            SchemaDiffCode.NOT_FOUND_SRC, SchemaDiffCode.LABEL_CONVERTIBLE,
-            SchemaDiffCode.DECIMAL_CONVERTIBLE, SchemaDiffCode.NAMES,
+            SchemaDiffCode.NOT_FOUND_SRC,
+            SchemaDiffCode.LABEL_CONVERTIBLE,
+            SchemaDiffCode.DECIMAL_CONVERTIBLE,
+            SchemaDiffCode.NAMES,
+            SchemaDiffCode.TABLE_NAMES,
             SchemaDiffCode.ARRAY_SET_MISMATCH,
             SchemaDiffCode.REPEATED_STRUCT_MISMATCH,
-            SchemaDiffCode.TYPES_DIFFERENT_CONVERTIBLE
+            SchemaDiffCode.TYPES_DIFFERENT_CONVERTIBLE,
+            SchemaDiffCode.TYPES_SIGNLOSS_CONVERTIBLE,
         }
 
     def is_struct_mismatch(self):
@@ -185,6 +194,17 @@ _CONVERTIBLE_TYPES = {
     Schema_pb2.ColumnInfo.TYPE_FLOAT_64: [Schema_pb2.ColumnInfo.TYPE_FLOAT_32]
 }
 
+_SIGNLOSS_CONVERTIBLE_TYPES = {
+    Schema_pb2.ColumnInfo.TYPE_INT_8: Schema_pb2.ColumnInfo.TYPE_UINT_8,
+    Schema_pb2.ColumnInfo.TYPE_INT_16: Schema_pb2.ColumnInfo.TYPE_UINT_16,
+    Schema_pb2.ColumnInfo.TYPE_INT_32: Schema_pb2.ColumnInfo.TYPE_UINT_32,
+    Schema_pb2.ColumnInfo.TYPE_INT_64: Schema_pb2.ColumnInfo.TYPE_UINT_64,
+    Schema_pb2.ColumnInfo.TYPE_UINT_8: Schema_pb2.ColumnInfo.TYPE_INT_8,
+    Schema_pb2.ColumnInfo.TYPE_UINT_16: Schema_pb2.ColumnInfo.TYPE_INT_16,
+    Schema_pb2.ColumnInfo.TYPE_UINT_32: Schema_pb2.ColumnInfo.TYPE_INT_32,
+    Schema_pb2.ColumnInfo.TYPE_UINT_64: Schema_pb2.ColumnInfo.TYPE_INT_64,
+}
+
 
 class Column:
     """Code representation of a schema Column, parallel to Schema_pb2.Column.
@@ -225,6 +245,12 @@ class Column:
     def name(self) -> str:
         """Shortcut to the name of this column."""
         return self.info.name
+
+    def sql_name(self) -> str:
+        """Return the name of this column in SQL statements."""
+        if self.clickhouse_annotation.original_name:
+            return self.clickhouse_annotation.original_name
+        return self.name()
 
     def type_name(self) -> str:
         """Shortcut to the Schema type name of this column."""
@@ -439,7 +465,10 @@ class Column:
         return (self.info.column_type == column.info.column_type or
                 (self.info.column_type in _CONVERTIBLE_TYPES and
                  column.info.column_type
-                 in _CONVERTIBLE_TYPES[self.info.column_type]))
+                 in _CONVERTIBLE_TYPES[self.info.column_type]),
+                (self.info.column_type in _SIGNLOSS_CONVERTIBLE_TYPES and
+                 column.info.column_type
+                 == _SIGNLOSS_CONVERTIBLE_TYPES[self.info.column_type]))
 
     def compare_type(self,
                      column: 'Column',
@@ -458,13 +487,24 @@ class Column:
                         f'source type `{column.type_name()}` '
                         f'vs. destination type `{self.type_name()}`', name))
                 return diffs
-            diffs.append(
-                SchemaDiff(
-                    SchemaDiffCode.TYPES_DIFFERENT_CONVERTIBLE,
-                    'Different but compatible types found for '
-                    f'column {self.name()}: '
-                    f'source type `{column.type_name()}` '
-                    f'vs. destination type `{self.type_name()}`', name))
+            if (self.info.column_type in _SIGNLOSS_CONVERTIBLE_TYPES and
+                    column.info.column_type
+                    == _SIGNLOSS_CONVERTIBLE_TYPES[self.info.column_type]):
+                diffs.append(
+                    SchemaDiff(
+                        SchemaDiffCode.TYPES_SIGNLOSS_CONVERTIBLE,
+                        'Different but compatible with possible sign loss '
+                        f'types found for column {self.name()}: '
+                        f'source type `{column.type_name()}` '
+                        f'vs. destination type `{self.type_name()}`', name))
+            else:
+                diffs.append(
+                    SchemaDiff(
+                        SchemaDiffCode.TYPES_DIFFERENT_CONVERTIBLE,
+                        'Different but compatible types found for '
+                        f'column {self.name()}: '
+                        f'source type `{column.type_name()}` '
+                        f'vs. destination type `{self.type_name()}`', name))
         diffs.extend(self._compare_subfields(column, prefix))
         diffs.extend(self._compare_attributes(column, prefix, skip_label))
         return diffs
@@ -689,13 +729,13 @@ class Table:
         if self.name() != table.name():
             diffs.append(
                 SchemaDiff(
-                    SchemaDiffCode.NAMES,
+                    SchemaDiffCode.TABLE_NAMES,
                     f'Table names different: `{self.name()}`'
                     f' vs `{table.name()}`'))
         elif self.info.full_name != table.info.full_name:
             diffs.append(
                 SchemaDiff(
-                    SchemaDiffCode.NAMES,
+                    SchemaDiffCode.TABLE_NAMES,
                     f'Table full names different: `{self.info.full_name}`'
                     f' vs `{table.info.full_name}`'))
         diffs.extend(

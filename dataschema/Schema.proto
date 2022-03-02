@@ -200,6 +200,9 @@ message ColumnClickhouseAnnotation {
   // Override the default type implied by this field with this
   // clickhouse type when generating the SQL.
   optional string type_name = 4;
+  // Override the name of the column when generating SQL columns
+  // (in clickhouse or via SQL alchemy).
+  optional string original_name = 5;
 }
 extend google.protobuf.FieldOptions {
   optional ColumnClickhouseAnnotation column_clickhouse_annotation = 50004;

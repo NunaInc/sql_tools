@@ -387,6 +387,16 @@ class ScalaOriginalName(ColumnAnnotation):
         column.scala_annotation.original_name = self.value
 
 
+class ClickhouseOriginalName(ColumnAnnotation):
+
+    def __init__(self, value: str):
+        self.value = value
+
+    def annotate_column(self, column: Schema.Column):
+        column.has_clickhouse_annotation = True
+        column.clickhouse_annotation.original_name = self.value
+
+
 class Width(ColumnAnnotation):
 
     def __init__(self, value: int):

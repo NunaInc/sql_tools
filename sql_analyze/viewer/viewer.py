@@ -196,7 +196,7 @@ def run_server(argv):
     global _SERVER
     _SERVER = SqlAnalyzeServer(FLAGS.max_cache_size, FLAGS.stocksql_dirs)
     with socketserver.TCPServer(('', FLAGS.port), SqlAnalyzeHandler) as httpd:
-        print(f'Serving at {FLAGS.port} (use --port=<port> to change)')
+        print(f'Serving at {FLAGS.port}')
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:

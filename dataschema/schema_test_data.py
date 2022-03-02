@@ -82,4 +82,5 @@ class TestProto:
     fwidth: Annotate(Optional[str], annotations.Width(10))
     flob: Annotate(Optional[str], annotations.Lob())
     fcommented: Annotate(Optional[str], annotations.Comment('Some comment'))
-    fboolean: Optional[bool]
+    fboolean: Annotate(Optional[bool],
+                       annotations.ClickhouseOriginalName('fboolean_sql'))

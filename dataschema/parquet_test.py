@@ -107,33 +107,33 @@ class ParquetTest(unittest.TestCase):
 
     def test_schema2parquet(self):
         table = python2schema.ConvertDataclass(schema_test_data.TestProto)
-        pq_schema = schema2parquet.ConvertSchema(table)
+        pq_schema = schema2parquet.ConvertTable(table)
         self.assertEqual(f'{pq_schema}', PARQUET_SCHEMA)
         rtable = parquet2schema.ConvertSchema(pq_schema,
                                               'pyschema.test.TestProto')
         diffs = table.compare(rtable)
         self.assertEqual(len(diffs), 2)
         # Internal per no sets in parquet.
-        self.assertEqual(diffs[0].code, Schema.SchemaDiffCode.NAMES)
+        self.assertEqual(diffs[0].code, Schema.SchemaDiffCode.TABLE_NAMES)
         self.assertEqual(diffs[1].code,
                          Schema.SchemaDiffCode.REPEATED_STRUCT_MISMATCH)
         self.assertEqual(diffs[1].column, 'frep_set')
 
     def test_example(self):
         table = python2schema.ConvertDataclass(schema_example.Example)
-        pq_schema = schema2parquet.ConvertSchema(table)
+        pq_schema = schema2parquet.ConvertTable(table)
         print(f'Example:\n{pq_schema}')
 
     def test_nested(self):
         table = python2schema.ConvertDataclass(TestStruct)
-        pq_schema = schema2parquet.ConvertSchema(table)
+        pq_schema = schema2parquet.ConvertTable(table)
         self.assertEqual(f'{pq_schema}', ELEMENT_PARQUET_SCHEMA)
         rtable = parquet2schema.ConvertSchema(pq_schema,
                                               'pyschema.test.TestStruct')
         diffs = table.compare(rtable)
         # Internal structure differences per repeated / array & no sets in parquet.
         self.assertEqual(len(diffs), 3)
-        self.assertEqual(diffs[0].code, Schema.SchemaDiffCode.NAMES)
+        self.assertEqual(diffs[0].code, Schema.SchemaDiffCode.TABLE_NAMES)
         self.assertEqual(diffs[1].code,
                          Schema.SchemaDiffCode.REPEATED_STRUCT_MISMATCH)
         self.assertEqual(diffs[1].column, 'elist')

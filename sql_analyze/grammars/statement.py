@@ -670,7 +670,8 @@ class PivotView(Source):
         with StringIO() as s:
             s.write('PIVOT (')
             if self.pivots:
-                s.write(', '.join(f'{pivot.recompose(sep)} AS {pivot.name}'
+                s.write(', '.join(f'{pivot.recompose(sep)}' +
+                                  (f' AS {pivot.name}' if pivot.name else '')
                                   for pivot in self.pivots))
             s.write(f'{sep}FOR{sep}')
             s.write(', '.join(
@@ -678,7 +679,8 @@ class PivotView(Source):
             s.write(f'{sep}IN{sep}')
             if self.columns_expressions:
                 s.write('(')
-                s.write(', '.join(f'{exp.recompose(sep)} AS {exp.name}'
+                s.write(', '.join(f'{exp.recompose(sep)}' +
+                                  (f' AS {exp.name}' if exp.name else '')
                                   for exp in self.columns_expressions))
                 s.write(')')
             s.write(')')
@@ -1339,6 +1341,8 @@ class Query(Source):
                 s.write(clause.tree_str(sub_indent))
             for set_op in self.set_ops:
                 s.write(set_op.tree_str(name_indent))
+            for lateral in self.laterals:
+                s.write(lateral.tree_str(name_indent))
             return s.getvalue()
 
     def recompose(self, sep: str = ' '):
@@ -1449,6 +1453,9 @@ class Query(Source):
             node.add_child(graph.node_by_source(clause),
                            LinkType.EXPRESSION_AUX)
             clause.link_graph(graph, resolvers, processed)
+        for lateral in self.laterals:
+            node.add_child(graph.node_by_source(lateral), LinkType.SOURCE)
+            lateral.link_graph(graph, resolvers, processed)
 
 
 class SetOpQuery(Query):

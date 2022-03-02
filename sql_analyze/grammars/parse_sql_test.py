@@ -102,6 +102,16 @@ class ParseSqlTest(unittest.TestCase):
             'SUM(age) AS a, AVG(class) AS c '
             'FOR name IN (\'John\' AS john, \'Mike\' AS mike))')
         self.hive_recompose_test(
+            'SELECT * FROM ('
+            'SELECT course, earnings, '
+            '"a" AS a, "b" AS b, "c" AS c FROM courseSales) '
+            'PIVOT (sum(Earnings) FOR Course IN (\'dotNET\', \'Java\'))')
+        self.hive_recompose_test(
+            'SELECT * FROM ('
+            'SELECT earnings, year, s FROM courseSales '
+            'JOIN yearsWithComplexTypes ON year = y) '
+            'PIVOT (sum(earnings) FOR s IN ((1, \'a\'), (2, \'b\')))')
+        self.hive_recompose_test(
             'SELECT * FROM person '
             'LATERAL VIEW EXPLODE(ARRAY(30, 60)) tableName AS c_age, '
             'LATERAL VIEW OUTER EXPLODE(ARRAY(40, 80)) AS d_age')

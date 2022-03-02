@@ -99,5 +99,7 @@ message TestProto {
   optional string fcommented = 23 [
       (nuna.schema.pb.column_data_annotation).comment = "Some comment"
     ];
-  optional bool fboolean = 24;
+  optional bool fboolean = 24 [
+      (nuna.schema.pb.column_clickhouse_annotation).original_name = "fboolean_sql"
+    ];
 }

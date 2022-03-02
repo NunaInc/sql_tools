@@ -25,9 +25,15 @@ from enum import IntEnum
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 DEFAULT_BOOL = ('tobool', ('int', (0, 2)))
-DEFAULT_INT_8 = ('int', (0, 256))
-DEFAULT_INT = ('int', (0, 10000))
+# Would include negatives in the default generator, but that would actually
+# be less useful, as people usually mean 'positive values' in their integer
+# columns, and they can override these values to produce something more specific.
+DEFAULT_INT_8 = ('int', (0, 127))
+DEFAULT_UINT_8 = ('int', (0, 255))
+DEFAULT_INT = ('int', (0, 32767))
+DEFAULT_UINT = ('int', (0, 65535))
 DEFAULT_STRING = ('str', 8)
+DEFAULT_BYTES = ('tobytes', ('str', 8))
 DEFAULT_FLOAT = ('uniform', (0, 100))
 DEFAULT_DATE = ('date', (('todate', '2010-01-01'), ('int', (0, 365 * 10 + 2))))
 DEFAULT_DATETIME = ('datetime', (('todatetime', '2010-01-01'),
@@ -37,16 +43,16 @@ DEFAULT_DECIMAL = ('todecimal', ('format', ([('int', (0, 10000)),
 
 DEFAULT_BY_TYPE = {
     Schema_pb2.ColumnInfo.TYPE_STRING: DEFAULT_STRING,
-    Schema_pb2.ColumnInfo.TYPE_BYTES: DEFAULT_STRING,
+    Schema_pb2.ColumnInfo.TYPE_BYTES: DEFAULT_BYTES,
     Schema_pb2.ColumnInfo.TYPE_BOOLEAN: DEFAULT_BOOL,
     Schema_pb2.ColumnInfo.TYPE_INT_8: DEFAULT_INT_8,
     Schema_pb2.ColumnInfo.TYPE_INT_16: DEFAULT_INT,
     Schema_pb2.ColumnInfo.TYPE_INT_32: DEFAULT_INT,
     Schema_pb2.ColumnInfo.TYPE_INT_64: DEFAULT_INT,
-    Schema_pb2.ColumnInfo.TYPE_UINT_8: DEFAULT_INT_8,
-    Schema_pb2.ColumnInfo.TYPE_UINT_16: DEFAULT_INT,
-    Schema_pb2.ColumnInfo.TYPE_UINT_32: DEFAULT_INT,
-    Schema_pb2.ColumnInfo.TYPE_UINT_64: DEFAULT_INT,
+    Schema_pb2.ColumnInfo.TYPE_UINT_8: DEFAULT_UINT_8,
+    Schema_pb2.ColumnInfo.TYPE_UINT_16: DEFAULT_UINT,
+    Schema_pb2.ColumnInfo.TYPE_UINT_32: DEFAULT_UINT,
+    Schema_pb2.ColumnInfo.TYPE_UINT_64: DEFAULT_UINT,
     Schema_pb2.ColumnInfo.TYPE_DECIMAL: DEFAULT_DECIMAL,
     Schema_pb2.ColumnInfo.TYPE_FLOAT_32: DEFAULT_FLOAT,
     Schema_pb2.ColumnInfo.TYPE_FLOAT_64: DEFAULT_FLOAT,

@@ -51,6 +51,8 @@ def recompose(tokens: Tokens) -> Tuple[str, str, str]:
 
     Returns: (recomposed_string, first_token, last_token)
     """
+    if isinstance(tokens, str):
+        return (tokens, tokens, tokens)
     first_token = None
     last_token = None
     with StringIO() as buf:
