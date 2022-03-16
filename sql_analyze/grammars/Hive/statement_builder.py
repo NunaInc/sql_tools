@@ -662,31 +662,53 @@ class StatementVisitor(HiveParserVisitor):
 
     def visitCTEStatement(self, ctx):
         name = trees.recompose(ctx.tableName())
+        destination = statement.View(parent=None, name=name, original_name=name)
+        destination.set_limits(ctx.tableName())
+        if not ctx.selectStatementWithCTE():
+            return (None, destination)
         query = QueryCTEVisitor(name=name)
         query.visit(ctx.selectStatementWithCTE())
-        query.query.destination = statement.View(parent=None,
-                                                 name=name,
-                                                 original_name=name).set_limits(
-                                                     ctx.tableName())
-        return query.query.set_limits(ctx)
+        query.query.destination = destination
+        query.query.set_limits(ctx)
+        return (query.query, destination)
+
+    def extractInputFile(self, ctx, create_stmt):
+        using_clause = ctx.createUsing()
+        if not using_clause:
+            return
+        create_stmt.input_format = trees.recompose(
+            using_clause.identifier()).upper()
+        if not using_clause.createOptions():
+            return
+        for elem in using_clause.createOptions().createOptionsElement():
+            if trees.recompose(elem.identifier()).upper() == 'PATH':
+                exp = elem.expression()
+                if (exp.atomExpression() and exp.atomExpression().constant() and
+                        exp.atomExpression().constant().StringLiteral()):
+                    # We know is the right format - so is safe
+                    # pylint: disable=eval-used
+                    create_stmt.input_path = eval(
+                        trees.recompose(
+                            exp.atomExpression().constant().StringLiteral()))
 
     def visitCreateViewStatement(self,
                                  ctx: HiveParser.CreateViewStatementContext):
-        query = self.visitCTEStatement(ctx)
-        if ctx.KW_TEMPORARY():
+        (query, destination) = self.visitCTEStatement(ctx)
+        if ctx.temporary():
             name = 'CREATE TEMPORARY VIEW'
         else:
             name = 'CREATE VIEW'
-        self.statements.append(
-            statement.Create(None, name, query.destination,
-                             tokens.from_tree(ctx), query).set_limits(ctx))
+        create_stmt = statement.Create(None, name, destination,
+                                       tokens.from_tree(ctx),
+                                       query).set_limits(ctx)
+        self.extractInputFile(ctx, create_stmt)
+        self.statements.append(create_stmt)
 
     def visitCreateMaterializedViewStatement(
             self, ctx: HiveParser.CreateMaterializedViewStatementContext):
-        query = self.visitCTEStatement(ctx)
+        (query, destination) = self.visitCTEStatement(ctx)
         self.statements.append(
-            statement.Create(None,
-                             'CREATE MATERIALIZED VIEW', query.destination,
+            statement.Create(None, 'CREATE MATERIALIZED VIEW', destination,
                              tokens.from_tree(ctx), query).set_limits(ctx))
 
     def visitCreateTableStatement(self,
@@ -702,6 +724,8 @@ class StatementVisitor(HiveParserVisitor):
             visitor.visit(ctx.selectStatementWithCTE())
             visitor.query.destination = destination
             query = visitor.query
-        self.statements.append(
-            statement.Create(None, 'CREATE TABLE', destination,
-                             tokens.from_tree(ctx), query).set_limits(ctx))
+        create_stmt = statement.Create(None, 'CREATE TABLE', destination,
+                                       tokens.from_tree(ctx),
+                                       query).set_limits(ctx)
+        self.extractInputFile(ctx, create_stmt)
+        self.statements.append(create_stmt)

@@ -120,13 +120,11 @@ def parse_sql(opt: ParseSqlOptions):
     return result
 
 
-def sql_to_graph(sql_code: str, dialect: str) -> statement.Graph:
-    """Converts a sql statement to a statement Graph.
-
-    Arguments:
-        sql_code: sql code to process.
-        dialect: dialect of sql to use.
-    """
+def sql_to_queries(
+    sql_code: str,
+    dialect: str,
+    schema_provider: Optional[statement.SchemaProvider] = None
+) -> List[statement.Source]:
     if dialect.upper() in ('SPARKSQL', 'HIVE'):
         tree, _, queries = parse_sql_hive.parse_hive_sql_statement(sql_code)
     elif dialect.upper() in ('CLICKHOUSE'):
@@ -138,6 +136,30 @@ def sql_to_graph(sql_code: str, dialect: str) -> statement.Graph:
     if errors:
         errors_str = '\n'.join(errors)
         raise ValueError(f'Errors in SQL:\n {errors_str}')
+    if not schema_provider:
+        return queries
+    start = trees.CodeLocation(0, 1, 0)
+    for query in queries:
+        query.apply_schemas(
+            statement.SchemaInfo.from_statement(
+                trees.code_extract(sql_code, start, query.stop),
+                schema_provider))
+        start = query.stop
+    return queries
+
+
+def sql_to_graph(
+    sql_code: str,
+    dialect: str,
+    schema_provider: Optional[statement.SchemaProvider] = None
+) -> statement.Graph:
+    """Converts a sql statement to a statement Graph.
+
+    Arguments:
+        sql_code: sql code to process.
+        dialect: dialect of sql to use.
+    """
+    queries = sql_to_queries(sql_code, dialect, schema_provider)
     graph = statement.Graph()
     for query in queries:
         graph.populate(query)

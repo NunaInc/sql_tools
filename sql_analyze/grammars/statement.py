@@ -15,6 +15,7 @@
 #
 """Classes to represent the structure of a sql statement."""
 
+import re
 from collections import deque
 from dataschema import Schema
 from enum import Enum, auto
@@ -216,6 +217,60 @@ class Graph:
         return list(outputs)
 
 
+class SchemaProvider:
+    """Base class for an object that provides schema from a name."""
+
+    def __init__(self):
+        pass
+
+    def find_schema(self, name: str) -> Optional[Schema.Table]:
+        del name
+
+
+class SchemaInfo:
+    """Represents schema information for a statement.
+
+    Attributes:
+      tables: maps from table name to schema table.
+      output: schema for the output of a query.
+    """
+
+    def __init__(self,
+                 tables: Optional[Dict[str, Schema.Table]] = None,
+                 output: Schema.Table = None):
+        if tables:
+            self.tables = tables
+        else:
+            self.tables = {}
+        self.output = output
+
+    @classmethod
+    def from_statement(cls, sql_code: str, schema_provider: SchemaProvider):
+        schema_re = re.compile(r'^--@@?Schema:\s*(\w*)\s*([\w\.]*)\s*$')
+        output_re = re.compile(r'^--@@?Output\s*:\s*([\w\.]*)\s*$')
+        tables = {}
+        output = None
+        for line in sql_code.splitlines():
+            schema = schema_re.match(line)
+            if schema:
+                schema_table = schema_provider.find_schema(schema.group(2))
+                if not schema_table:
+                    raise ValueError(
+                        f'Schema for table `{schema.group(1)}` named '
+                        f'`{schema.group(2)}` cannot be found')
+                tables[schema.group(1)] = schema_table
+            else:
+                output_name = output_re.match(line)
+                if output_name:
+                    output = schema_provider.find_schema(output_name.group(1))
+                    if not output:
+                        raise ValueError(
+                            f'Output schema for `{output_name.group(1)}` cannot be found'
+                        )
+
+        return cls(tables, output)
+
+
 class Source:
     """Base class for a component in a sql statement - a source of names.
 
@@ -382,6 +437,12 @@ class Source:
         """Links the node corresponding to this source in the graph."""
         raise NotImplementedError(
             f'link_graph() not implemented for {type(self).__name__}')
+
+    def apply_schemas(self, schema_info: SchemaInfo):
+        """Sets the schema of underlying tables based on the ones
+        declared in schema_info."""
+        for child in self.children:
+            child.apply_schemas(schema_info)
 
 
 class Column(Source):
@@ -572,6 +633,22 @@ class Table(Source):
             self.is_end_source = True
         for src in srcs:
             node.add_inlink(graph.node_by_source(src), LinkType.SOURCE)
+
+    def set_schema(self, schema: Schema.Table):
+        if self.schema:
+            diffs = self.schema.compare(schema)
+            major_diffs = [
+                diff for diff in diffs if not diff.is_struct_mismatch()
+            ]
+            if major_diffs:
+                raise ValueError(
+                    f'Cannot update schema for table {self.name_str()} '
+                    f'per major differences: {major_diffs}')
+        self.schema = schema
+
+    def apply_schemas(self, schema_info: SchemaInfo):
+        if self.original_name in schema_info.tables:
+            self.set_schema(schema_info.tables[self.name])
 
 
 class View(Table):
@@ -1457,6 +1534,13 @@ class Query(Source):
             node.add_child(graph.node_by_source(lateral), LinkType.SOURCE)
             lateral.link_graph(graph, resolvers, processed)
 
+    def apply_schemas(self, schema_info: SchemaInfo):
+        if (schema_info.output and self.destination and
+                isinstance(self.destination, Table)):
+            self.destination.set_schema(schema_info.output)
+            schema_info.output = None
+        super().apply_schemas(schema_info)
+
 
 class SetOpQuery(Query):
     """A select statment which is an operand to a set operation w/ the main select.
@@ -1505,7 +1589,33 @@ class GeneralStatement(Source):
             node.add_inlink(graph.node_by_source(child), LinkType.INCLUDED_AUX)
 
 
-class Create(GeneralStatement):
+class StatementWithQuery(GeneralStatement):
+    """A statement that wraps a query and writes to a destination."""
+
+    def __init__(self,
+                 parent: Optional[Source],
+                 name: Optional[str],
+                 destination: Source,
+                 statement_tokens: tokens.Tokens,
+                 query: Optional[Query] = None):
+        super().__init__(parent, name, statement_tokens)
+        self.destination = destination
+        self.query = query
+        if query is not None:
+            query.set_parent(self)
+        if destination:
+            destination.set_parent(self)
+
+    def apply_schemas(self, schema_info: SchemaInfo):
+        if (schema_info.output and self.destination and
+                isinstance(self.destination, Table)):
+            self.destination.set_schema(schema_info.output)
+            schema_info.output = None
+        if self.query:
+            self.query.apply_schemas(schema_info)
+
+
+class Create(StatementWithQuery):
     """A statement that creates a view / table (possible via a query).
 
     Attributes:
@@ -1525,17 +1635,13 @@ class Create(GeneralStatement):
                  statement_tokens: tokens.Tokens,
                  query: Optional[Query] = None,
                  schema: Optional[Schema.Table] = None):
-        super().__init__(parent, name, statement_tokens)
-        self.destination = destination
-        self.query = query
-        if query is not None:
-            query.set_parent(self)
-        if destination:
-            destination.set_parent(self)
+        super().__init__(parent, name, destination, statement_tokens, query)
         self.schema = schema
+        self.input_format = None
+        self.input_path = None
 
 
-class Insert(GeneralStatement):
+class Insert(StatementWithQuery):
     """A statemenent that inserts into a table.
 
     Attributes:
@@ -1544,17 +1650,26 @@ class Insert(GeneralStatement):
         query: if this create statement includes a query as a source,
             this contains that query.
     """
+    pass
 
-    def __init__(self,
-                 parent: Optional[Source],
-                 name: Optional[str],
-                 destination: Source,
-                 statement_tokens: tokens.Tokens,
-                 query: Optional[Query] = None):
-        super().__init__(parent, name, statement_tokens)
-        self.destination = destination
-        self.query = query
-        if query is not None:
-            query.set_parent(self)
-        if destination:
-            destination.set_parent(self)
+
+def find_end_sources(query: Source) -> List[Table]:
+    """Returns the set of bottom-end sources of a statement."""
+    graph = Graph()
+    graph.populate(query)
+    query.link_graph(graph, [], set())
+    end_sources = []
+    dest = find_destination(query)
+    for src in graph.src2id:
+        if isinstance(src, Table) and src.is_end_source and src != dest:
+            end_sources.append(src)
+    return end_sources
+
+
+def find_destination(query: Source) -> Source:
+    """Returns the final destination of a statement."""
+    if isinstance(query, StatementWithQuery):
+        return query.destination
+    if isinstance(query, Query):
+        return query.destination
+    return None

@@ -248,13 +248,27 @@ dropDatabaseStatement
     ;
 
 databaseComment
-
     : KW_COMMENT StringLiteral
     ;
 
+temporary
+    : (KW_TEMPORARY | KW_TEMP)
+    ;
+
+createOptionsElement
+    : identifier EQUAL? expression
+    ;
+
+createOptions
+    : KW_OPTIONS LPAREN createOptionsElement (COMMA createOptionsElement)* RPAREN
+    ;
+
+createUsing
+    : KW_USING identifier createOptions?
+    ;
 
 createTableStatement
-    : KW_CREATE KW_TEMPORARY? KW_EXTERNAL? KW_TABLE ifNotExists? tableName
+    : KW_CREATE temporary? KW_EXTERNAL? KW_TABLE ifNotExists? tableName
       (  KW_LIKE tableName
          tableRowFormat?
          tableFileFormat?
@@ -262,6 +276,7 @@ createTableStatement
          tablePropertiesPrefixed?
        | (LPAREN columnNameTypeOrConstraintList RPAREN)?
          tableComment?
+         createUsing?
          tablePartition?
          tableBuckets?
          tableSkewed?
@@ -785,12 +800,12 @@ resourceType
   ;
 
 createFunctionStatement
-    : KW_CREATE KW_TEMPORARY? KW_FUNCTION functionIdentifier KW_AS StringLiteral
+    : KW_CREATE temporary? KW_FUNCTION functionIdentifier KW_AS StringLiteral
       (KW_USING resourceList)?
     ;
 
 dropFunctionStatement
-    : KW_DROP KW_TEMPORARY? KW_FUNCTION ifExists? functionIdentifier
+    : KW_DROP temporary? KW_FUNCTION ifExists? functionIdentifier
     ;
 
 reloadFunctionStatement
@@ -808,12 +823,13 @@ dropMacroStatement
 
 
 createViewStatement
-    : KW_CREATE orReplace? KW_TEMPORARY? KW_VIEW
+    : KW_CREATE orReplace? temporary? KW_VIEW
         ifNotExists? tableName
-        (LPAREN columnNameCommentList RPAREN)? tableComment? viewPartition?
+        (LPAREN columnNameCommentList RPAREN)? tableComment?
+        createUsing?
+        viewPartition?
         tablePropertiesPrefixed?
-        KW_AS
-        selectStatementWithCTE
+        (KW_AS selectStatementWithCTE)?
     ;
 
 createMaterializedViewStatement

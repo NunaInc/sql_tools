@@ -133,6 +133,22 @@ def _code_snippet(code: str, location: CodeLocation):
     return ''
 
 
+def code_extract(code: str, start: CodeLocation, stop: CodeLocation):
+    """Extracts a piece from code between start and stop."""
+    if start.position >= 0 and stop.position >= 0:
+        return code[start.position:stop.position]
+    lines = code.splitlines(keepends=True)
+    if (start.line < 1 or start.line > len(lines) or stop.line < 1 or
+            stop.line > len(lines)):
+        return ''
+    if start.line == stop.line:
+        return lines[start.line - 1][start.column:stop.column]
+    code_lines = [lines[start.line - 1][start.column:]]
+    code_lines.extend(lines[start.line:stop.line - 1])
+    code_lines.append(lines[stop.line - 1][:stop.column])
+    return ''.join(code_lines)
+
+
 def find_errors(tree: Tree, code: Optional[str] = None) -> List[str]:
     """Finds and returns the errors in the tree."""
     if isinstance(tree, ErrorNode):

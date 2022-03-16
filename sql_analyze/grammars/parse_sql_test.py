@@ -15,10 +15,42 @@
 #
 """Tests if parsing happens correctly for various sql statements."""
 import unittest
-from dataschema import schema2sql
-from sql_analyze.grammars import statement, trees
+from dataclasses import dataclass
+from dataschema import Schema, python2schema, schema2sql
+from sql_analyze.grammars import parse_sql_lib, statement, trees
 from sql_analyze.grammars.Hive import parse_sql_lib as parse_sql_hive
 from sql_analyze.grammars.ClickHouse import parse_sql_lib as parse_sql_ch
+from typing import Optional
+
+
+@dataclass
+class A:
+    """Schema example for test."""
+    foo: int
+    bar: str
+
+
+@dataclass
+class B:
+    """Schema example for test."""
+    baz: Optional[str]
+    qux: int
+
+
+class TestSchemaProvider(statement.SchemaProvider):
+    """Schema provider used for testing."""
+
+    def __init__(self):
+        super().__init__()
+        self.schemas = {
+            'A': python2schema.ConvertDataclass(A),
+            'B': python2schema.ConvertDataclass(B),
+        }
+
+    def find_schema(self, name: str) -> Optional[Schema.Table]:
+        if name in self.schemas:
+            return self.schemas[name]
+        return None
 
 
 class ParseSqlTest(unittest.TestCase):
@@ -147,11 +179,20 @@ class ParseSqlTest(unittest.TestCase):
         self.assertEqual(len(stmts), 1)
         self.assertEqual(stmts[0].name, 'CREATE TEMPORARY VIEW')
         self.assertTrue(isinstance(stmts[0], statement.Create))
-        self.assertEqual(stmts[0].destination.name, 'foo_view')
         query = stmts[0].query
         self.assertEqual(query.destination.name, 'foo_view')
         self.assertEqual(query.name, 'foo_view')
         self.assertEqual(query.recompose(), 'SELECT foo FROM bar')
+        self.assertEqual(stmts[0].destination.name, 'foo_view')
+        _, _, stmts = parse_sql_hive.parse_hive_sql_statement(
+            'CREATE OR REPLACE TEMP VIEW foo_view '
+            'USING csv OPTIONS(path "/foo/bar.csv")')
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].name, 'CREATE TEMPORARY VIEW')
+        self.assertTrue(isinstance(stmts[0], statement.Create))
+        self.assertEqual(stmts[0].destination.name, 'foo_view')
+        self.assertEqual(stmts[0].input_format, 'CSV')
+        self.assertEqual(stmts[0].input_path, '/foo/bar.csv')
         _, _, stmts = parse_sql_hive.parse_hive_sql_statement(
             'CREATE MATERIALIZED VIEW foo_view AS '
             'SELECT foo FROM bar')
@@ -269,6 +310,41 @@ SETTINGS index_granularity = 8192""")
             f'Errors found in ClickHouse {sql}: ' + '\n'.join(errors))
         self.assertEqual(len(queries), 1, f'For Clickhouse {sql}')
         self.assertEqual(queries[0].recompose(), sql, 'For ClickHouse format')
+
+    def test_attach_schema(self):
+        provider = TestSchemaProvider()
+        queries = parse_sql_lib.sql_to_queries(
+            """
+--@Schema: input B
+--@Output: A
+CREATE TABLE boxes as
+SELECT
+  COALESCE(input.baz, "") as bar,
+  input.qux as foo
+FROM input WHERE input.qux > 2000;
+
+--@Schema: boxes A
+--@Schema: foxes B
+--@Output: B
+SELECT boxes.foo as qux, CONCAT("b_", foxes.baz)
+FROM boxes LEFT JOIN foxes on boxes.bar = foxes.qux;
+""", 'SPARKSQL', provider)
+        self.assertEqual(len(queries), 2)
+        src1 = statement.find_end_sources(queries[0])
+        self.assertEqual(len(src1), 1)
+        self.assertEqual(src1[0].name, 'input')
+        self.assertEqual(src1[0].schema, provider.schemas['B'])
+        dest1 = statement.find_destination(queries[0])
+        self.assertEqual(dest1.name, 'boxes')
+        self.assertEqual(dest1.schema, provider.schemas['A'])
+        src2 = statement.find_end_sources(queries[1])
+        self.assertEqual(len(src2), 2)
+        self.assertEqual(src2[0].name, 'boxes')
+        self.assertEqual(src2[0].schema, provider.schemas['A'])
+        self.assertEqual(src2[1].name, 'foxes')
+        self.assertEqual(src2[1].schema, provider.schemas['B'])
+        dest2 = statement.find_destination(queries[1])
+        self.assertEqual(dest2, None)
 
 
 if __name__ == '__main__':

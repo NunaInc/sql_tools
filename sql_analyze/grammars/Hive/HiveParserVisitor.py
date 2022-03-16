@@ -174,6 +174,26 @@ class HiveParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by HiveParser#temporary.
+    def visitTemporary(self, ctx:HiveParser.TemporaryContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by HiveParser#createOptionsElement.
+    def visitCreateOptionsElement(self, ctx:HiveParser.CreateOptionsElementContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by HiveParser#createOptions.
+    def visitCreateOptions(self, ctx:HiveParser.CreateOptionsContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by HiveParser#createUsing.
+    def visitCreateUsing(self, ctx:HiveParser.CreateUsingContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by HiveParser#createTableStatement.
     def visitCreateTableStatement(self, ctx:HiveParser.CreateTableStatementContext):
         return self.visitChildren(ctx)
