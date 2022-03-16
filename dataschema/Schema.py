@@ -124,7 +124,8 @@ class SchemaDiff:
     def is_struct_mismatch(self):
         """Acceptable stuct and name differences."""
         return self.code in {
-            SchemaDiffCode.NAMES, SchemaDiffCode.ARRAY_SET_MISMATCH,
+            SchemaDiffCode.NAMES, SchemaDiffCode.TABLE_NAMES,
+            SchemaDiffCode.ARRAY_SET_MISMATCH,
             SchemaDiffCode.REPEATED_STRUCT_MISMATCH
         }
 

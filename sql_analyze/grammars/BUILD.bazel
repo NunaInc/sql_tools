@@ -81,6 +81,7 @@ py_lint_test(
     srcs_version = "PY3",
     deps = [
         ":grammars",
+        ":parse_sql_lib",
         "//dataschema",
         "//sql_analyze/grammars/ClickHouse:parse_lib",
         "//sql_analyze/grammars/Hive:parse_lib",
