@@ -15,8 +15,9 @@
 #
 """A test module containing dataclasses for testing nested columns."""
 from dataclasses import dataclass
-from dataschema.entity import Annotate
 from dataschema import annotations
+from dataschema.entity import Annotate
+from dataschema.schema_types import NamedTuple, OptNamedTuple
 from typing import Optional
 
 
@@ -34,5 +35,14 @@ class OuterClass:
     ])
     optional_inner: Optional[InnerClass]
     optional_inner_tuple: Annotate(Optional[InnerClass], [
+        annotations.ClickhouseNestedType("Tuple")
+    ])
+    inner_tuple_alias: NamedTuple(InnerClass)
+    optional_inner_tuple_alias: OptNamedTuple(InnerClass)
+
+
+@dataclass
+class NestedBad:
+    non_nested_field: Annotate(str, [
         annotations.ClickhouseNestedType("Tuple")
     ])

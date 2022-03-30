@@ -134,6 +134,12 @@ EXPECTED_CREATE_SQL_NESTED_COLUMNS = """CREATE TABLE outer (
   ),
   optional_inner_tuple Tuple(
     field_b String
+  ),
+  inner_tuple_alias Tuple(
+    field_b String
+  ),
+  optional_inner_tuple_alias Tuple(
+    field_b String
   )
 )
 """
@@ -297,6 +303,11 @@ class SchemaTest(unittest.TestCase):
                 proto2schema.ConvertMessage(
                     schema_test_bad_pb2.BadOrderByFieldName.DESCRIPTOR))
             conv.validate()
+        with self.assertRaisesRegex(
+                ValueError,
+                'Nested type override is only supported for nested types.'):
+            table = python2schema.ConvertDataclass(nesting_test_data.NestedBad)
+            schema2sql.ConvertTable(table, table_name='nested_bad')
 
     def test_generate_example_dataclass(self):
         fc = schema2scala.FileConverter(_DEFAULT_ANNOTATIONS).from_module(

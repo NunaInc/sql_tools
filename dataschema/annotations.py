@@ -514,6 +514,9 @@ class ClickhouseNestedType(ColumnAnnotation):
         self.nested_type_name = nested_type_name
 
     def annotate_column(self, column: Schema.Column):
+        if column.info.column_type != Schema_pb2.ColumnInfo.TYPE_NESTED:
+            raise ValueError(
+                'Nested type override is only supported for nested types.')
         column.has_clickhouse_annotation = True
         column.clickhouse_annotation.nested_type_name = self.nested_type_name
 
