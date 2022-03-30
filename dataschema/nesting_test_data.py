@@ -23,11 +23,13 @@ from typing import Optional
 
 @dataclass
 class InnerClass:
+    """Class to nest inside another class."""
     field_b: str
 
 
 @dataclass
 class OuterClass:
+    """Example class for testing nested fields."""
     field_a: str
     inner: InnerClass
     inner_tuple: Annotate(InnerClass, [
@@ -43,6 +45,7 @@ class OuterClass:
 
 @dataclass
 class NestedBad:
+    """Example class with invalid annotation."""
     non_nested_field: Annotate(str, [
         annotations.ClickhouseNestedType("Tuple")
     ])
