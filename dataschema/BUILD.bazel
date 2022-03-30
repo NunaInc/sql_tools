@@ -144,6 +144,17 @@ py_lint_library(
 )
 
 py_lint_library(
+    name = "nesting_test_data",
+    testonly = True,
+    srcs = ["nesting_test_data.py"],
+    rules = "//:pylintrc",
+    srcs_version = "PY3",
+    deps = [
+        ":dataschema",
+    ],
+)
+
+py_lint_library(
     name = "schema_example",
     testonly = True,
     srcs = ["schema_example.py"],
@@ -162,6 +173,7 @@ py_lint_test(
     srcs_version = "PY3",
     deps = [
         ":dataschema",
+        ":nesting_test_data",
         ":schema_example",
         ":schema_example_py",
         ":schema_test_bad_py",

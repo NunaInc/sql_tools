@@ -507,6 +507,17 @@ class ClickhouseType(ColumnAnnotation):
         column.clickhouse_annotation.type_name = self.type_name
 
 
+class ClickhouseNestedType(ColumnAnnotation):
+    """Override the default ClickHouse type for a nested column w/ argument."""
+
+    def __init__(self, nested_type_name: int):
+        self.nested_type_name = nested_type_name
+
+    def annotate_column(self, column: Schema.Column):
+        column.has_clickhouse_annotation = True
+        column.clickhouse_annotation.nested_type_name = self.nested_type_name
+
+
 class Deprecated(ColumnAnnotation):
     """Shows the deprecation of a field."""
 
