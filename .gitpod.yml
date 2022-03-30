@@ -15,4 +15,7 @@ tasks:
       sudo apt -y update
       sudo apt -y install bazel
       sudo apt -y install bazel-4.2.2
+      sudo rm -rf /usr/bin/bazel
+      sudo ln -s /usr/bin/bazel-4.2.2 /usr/bin/bazel
+      bazel --version
       echo "Done."
