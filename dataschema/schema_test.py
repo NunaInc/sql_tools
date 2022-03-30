@@ -16,6 +16,8 @@
 """Tests the scala case class generation from proto."""
 
 import unittest
+from dataschema import annotations
+from dataschema import entity
 from dataschema import nesting_test_data
 from dataschema import proto2schema
 from dataschema import python2schema
@@ -308,6 +310,13 @@ class SchemaTest(unittest.TestCase):
                 'Nested type override is only supported for nested types.'):
             table = python2schema.ConvertDataclass(nesting_test_data.NestedBad)
             schema2sql.ConvertTable(table, table_name='nested_bad')
+        with self.assertRaisesRegex(
+                ValueError,
+                '`NamedTuple` is not a supported ClickHouse nested type. '
+                'Supported types: Tuple.'):
+            entity.Annotate(nesting_test_data.InnerClass, [
+                annotations.ClickhouseNestedType('NamedTuple')
+            ])
 
     def test_generate_example_dataclass(self):
         fc = schema2scala.FileConverter(_DEFAULT_ANNOTATIONS).from_module(

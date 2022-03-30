@@ -21,6 +21,8 @@ from typing import List, Optional, Union
 
 _SCHEMA_ANNOTATIONS = '__schema_annotations__'
 
+CLICKHOUSE_SUPPORTED_NESTED_TYPES = { 'Tuple' }
+
 
 def _class_annotate(cls, annotation):
     """Annotates a class."""
@@ -511,6 +513,12 @@ class ClickhouseNestedType(ColumnAnnotation):
     """Override the default ClickHouse type for a nested column w/ argument."""
 
     def __init__(self, nested_type_name: int):
+        if nested_type_name not in CLICKHOUSE_SUPPORTED_NESTED_TYPES:
+            supported_types = ', '.join(CLICKHOUSE_SUPPORTED_NESTED_TYPES)
+            raise ValueError(
+                f'`{nested_type_name}` is not a supported ClickHouse nested '
+                f'type. Supported types: {supported_types}.'
+            )
         self.nested_type_name = nested_type_name
 
     def annotate_column(self, column: Schema.Column):
