@@ -13,7 +13,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install setuptools==60.6.0 wheel==0.37.1
-          python -m pip install -r requirements.txt
       - uses: actions/setup-java@v2
         with:
           distribution: 'zulu'
@@ -22,8 +21,6 @@ jobs:
       - name: Bazel build
         run: bazel build //...
       - name: Bazel test
-        run: |
-          python -m pip install -r requirements.txt
-          bazel test --test_summary=detailed --test_output=errors //...
+        run: bazel test --test_summary=detailed --test_output=errors //...
       - name: Package whl
         run: ./package/build_pip.sh
