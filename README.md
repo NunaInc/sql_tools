@@ -79,7 +79,7 @@ table = python2schema.ConvertDataclass(CustomerInfo)
 This central data format can be converted to a variety of schema representations,
 using the various `schema2FORMAT` sub-modules in the `dataschema` module.
 
-### [ChickHouse](https://clickhouse.com/) `CREATE TABLE` SQL statements:
+### [ClickHouse](https://clickhouse.com/) `CREATE TABLE` SQL statements:
 
 This can be used to generate SQL code to be sent directly to ClickHouse
 for creating a table for storing customer info:

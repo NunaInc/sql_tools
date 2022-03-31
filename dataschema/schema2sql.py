@@ -138,7 +138,9 @@ class TableConverter:
         if column.is_low_cardinality():
             s += 'LowCardinality('
             end += ')'
-        if column.info.label == Schema_pb2.ColumnInfo.LABEL_OPTIONAL:
+        # ClickHouse nested types (Nested, Tuple) cannot be inside a Nullable.
+        if (column.info.label == Schema_pb2.ColumnInfo.LABEL_OPTIONAL and
+                column_type != Schema_pb2.ColumnInfo.TYPE_NESTED):
             s += 'Nullable('
             end += ')'
         if column_type == Schema_pb2.ColumnInfo.TYPE_MAP:
@@ -157,7 +159,11 @@ class TableConverter:
             if column_type not in CLICKHOUSE_TYPE_NAME:
                 raise KeyError(
                     f'Unknown type to convert to clickhouse: {column_type}')
-            s += CLICKHOUSE_TYPE_NAME[column_type]
+            if (column_type == Schema_pb2.ColumnInfo.TYPE_NESTED and
+                    column.clickhouse_annotation.nested_type_name):
+                s += column.clickhouse_annotation.nested_type_name
+            else:
+                s += CLICKHOUSE_TYPE_NAME[column_type]
             if column_type == Schema_pb2.ColumnInfo.TYPE_DECIMAL:
                 s += self._get_decimal_str(column)
             elif column_type == Schema_pb2.ColumnInfo.TYPE_DATETIME_64:

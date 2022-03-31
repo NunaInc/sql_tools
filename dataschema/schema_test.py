@@ -16,7 +16,11 @@
 """Tests the scala case class generation from proto."""
 
 import unittest
+from dataschema import annotations
+from dataschema import entity
+from dataschema import nesting_test_data
 from dataschema import proto2schema
+from dataschema import python2schema
 from dataschema import schema_example
 from dataschema import schema_test_data
 from dataschema import schema_test_pb2
@@ -119,6 +123,29 @@ ORDER BY (id, fsint32)
 PARTITION BY (toYYYYMM(fdate))
 SETTINGS index_granularity = 8192"""
 
+EXPECTED_CREATE_SQL_NESTED_COLUMNS = """CREATE TABLE outer (
+  field_a String,
+  inner Nested(
+    field_b String
+  ),
+  inner_tuple Tuple(
+    field_b String
+  ),
+  optional_inner Nested(
+    field_b String
+  ),
+  optional_inner_tuple Tuple(
+    field_b String
+  ),
+  inner_tuple_alias Tuple(
+    field_b String
+  ),
+  optional_inner_tuple_alias Tuple(
+    field_b String
+  )
+)
+"""
+
 
 class SchemaTest(unittest.TestCase):
 
@@ -150,6 +177,17 @@ class SchemaTest(unittest.TestCase):
         self.assertEqual(result['TestJoinProto'], EXPECTED_SQL_TESTJOINPROTO)
         # print(f'TestProto: `{result['TestProto']}`')
         self.assertEqual(result['TestProto'], EXPECTED_SQL_TESTPROTO)
+
+    def test_generate_sql_with_nested_columns(self):
+        """
+        Should:
+        - Use Nested as the default type for columns whose type is a dataclass
+        - Override the nested type when annotations.ClickhouseNestedType is used
+        - Prevent nested types from being inside Nullable types
+        """
+        table = python2schema.ConvertDataclass(nesting_test_data.OuterClass)
+        sql = schema2sql.ConvertTable(table, table_name='outer')
+        self.assertEqual(sql, EXPECTED_CREATE_SQL_NESTED_COLUMNS)
 
     def test_errors(self):
         with self.assertRaisesRegex(ValueError,
@@ -267,6 +305,18 @@ class SchemaTest(unittest.TestCase):
                 proto2schema.ConvertMessage(
                     schema_test_bad_pb2.BadOrderByFieldName.DESCRIPTOR))
             conv.validate()
+        with self.assertRaisesRegex(
+                ValueError,
+                'Nested type override is only supported for nested types.'):
+            table = python2schema.ConvertDataclass(nesting_test_data.NestedBad)
+            schema2sql.ConvertTable(table, table_name='nested_bad')
+        with self.assertRaisesRegex(
+                ValueError,
+                '`NamedTuple` is not a supported ClickHouse nested type. '
+                'Supported types: Tuple.'):
+            entity.Annotate(nesting_test_data.InnerClass, [
+                annotations.ClickhouseNestedType('NamedTuple')
+            ])
 
     def test_generate_example_dataclass(self):
         fc = schema2scala.FileConverter(_DEFAULT_ANNOTATIONS).from_module(
