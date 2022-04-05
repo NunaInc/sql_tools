@@ -58,7 +58,7 @@ class DoubleNested:
     field_tuple: NamedTuple(InnerClass)
 
 
-@annotations.default_compression(value='ZSTD')
+@annotations.default_compression(value="ZSTD")
 @dataclass
 class NestedCompression:
     """Example class to test compression in nested types."""
