@@ -134,7 +134,7 @@ class TableConverter:
     def _column_to_sql(self, column: Schema.Column, indent: int,
                        type_only: bool, is_nested: bool) -> str:
         """Returns a Clickhouse SQL column specification for `column`.
-        
+
         Parameters:
         column: Column specification.
         indent: Number of indentations at previous level.
