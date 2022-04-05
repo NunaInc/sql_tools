@@ -146,6 +146,25 @@ EXPECTED_CREATE_SQL_NESTED_COLUMNS = """CREATE TABLE outer (
 )
 """
 
+EXPECTED_CREATE_SQL_NESTED_COMPRESSION = """CREATE TABLE outer (
+  field_a String CODEC(ZSTD),
+  field_nested Nested(
+    field_b String
+  ) CODEC(ZSTD),
+  field_tuple Tuple(
+    field_b String
+  ) CODEC(ZSTD),
+  double_nested Nested(
+    field_nested Nested(
+      field_b String
+    ),
+    field_tuple Tuple(
+      field_b String
+    )
+  ) CODEC(ZSTD)
+)
+"""
+
 
 class SchemaTest(unittest.TestCase):
 
@@ -188,6 +207,17 @@ class SchemaTest(unittest.TestCase):
         table = python2schema.ConvertDataclass(nesting_test_data.OuterClass)
         sql = schema2sql.ConvertTable(table, table_name='outer')
         self.assertEqual(sql, EXPECTED_CREATE_SQL_NESTED_COLUMNS)
+
+    def test_generate_sql_with_nested_compression(self):
+        """
+        Should:
+        - Apply compression to outer class field, rather than nested sub-fields
+        - Not apply compression for deeply-nested fields (beyond first level)
+        """
+        table = python2schema.ConvertDataclass(
+            nesting_test_data.NestedCompression)
+        sql = schema2sql.ConvertTable(table, table_name='outer')
+        self.assertEqual(sql, EXPECTED_CREATE_SQL_NESTED_COMPRESSION)
 
     def test_errors(self):
         with self.assertRaisesRegex(ValueError,

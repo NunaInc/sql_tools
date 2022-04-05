@@ -99,11 +99,17 @@ class TableConverter:
             return 'UNCOMPRESSED'
         return None
 
-    def _get_codec(self, column: Schema.Column) -> Optional[str]:
+    def _get_codec(self, column: Schema.Column,
+                   is_nested: bool) -> Optional[str]:
         """Extracts the Clickhouse encoding string for `column`."""
         if column.is_low_cardinality():
             # No compression for low cardinality allowed in clickhouse.
             return None
+        if is_nested:
+            # No compression for descendants of nested columns.
+            return None
+        # TODO: Support compression for de-sugared nested columns, e.g.:
+        # `field.sub_field` String CODEC(ZSTD)
         codecs = []
         delta = column.clickhouse_annotation.delta_compression_width
         if delta:
@@ -111,6 +117,8 @@ class TableConverter:
         compression = self._get_compression_name(
             column.clickhouse_annotation.compression_type)
         if compression is None:
+            # TODO: Support different default compression for nested tables,
+            # currently uses default compression from parent table.
             compression = self._get_compression_name(
                 self.table.clickhouse_annotation.default_compression)
 
@@ -124,8 +132,18 @@ class TableConverter:
         return None
 
     def _column_to_sql(self, column: Schema.Column, indent: int,
-                       type_only: bool) -> str:
-        """Returns a Clichouse SQL column specification for `column`."""
+                       type_only: bool, is_nested: bool) -> str:
+        """Returns a Clickhouse SQL column specification for `column`.
+
+        Parameters:
+        column: Column specification.
+        indent: Number of indentations at previous level.
+        type_only: Whether or not to return only the column type.
+        is_nested: Whether or not the column is a descendant of a nested column.
+
+        Returns:
+        str: Clickhouse SQL column specification for `column`.
+        """
         s = ''
         if not type_only:
             s += f'{GetIndent(indent)}{column.sql_name()} '
@@ -144,13 +162,16 @@ class TableConverter:
             s += 'Nullable('
             end += ')'
         if column_type == Schema_pb2.ColumnInfo.TYPE_MAP:
-            ktype = self._column_to_sql(column.fields[0], 0, type_only=True)
-            vtype = self._column_to_sql(column.fields[1], 0, type_only=True)
+            ktype = self._column_to_sql(
+                column.fields[0], 0, type_only=True, is_nested=is_nested)
+            vtype = self._column_to_sql(
+                column.fields[1], 0, type_only=True, is_nested=is_nested)
             s += f'Map({ktype}, {vtype})'
         elif column_type in [
                 Schema_pb2.ColumnInfo.TYPE_ARRAY, Schema_pb2.ColumnInfo.TYPE_SET
         ]:
-            s += self._column_to_sql(column.fields[0], 0, type_only=True)
+            s += self._column_to_sql(
+                column.fields[0], 0, type_only=True, is_nested=is_nested)
         elif column.clickhouse_annotation.type_name:
             s += column.clickhouse_annotation.type_name
         elif column_type == Schema_pb2.ColumnInfo.TYPE_DECIMAL:
@@ -174,12 +195,13 @@ class TableConverter:
                     sub_columns.append(
                         self._column_to_sql(sub_column,
                                             indent + 2,
-                                            type_only=False))
+                                            type_only=False,
+                                            is_nested=True))
                 sub_columns_str = ',\n'.join(sub_columns)
                 s += f'(\n{sub_columns_str}\n{GetIndent(indent)})'
         s += end
         if not type_only:
-            codec = self._get_codec(column)
+            codec = self._get_codec(column, is_nested=is_nested)
             if codec is not None:
                 s += f' CODEC({codec})'
         return s
@@ -188,7 +210,8 @@ class TableConverter:
         """Returns a list of Clickhouse SQL column specifications."""
         columns = []
         for column in self.table.columns:
-            columns.append(self._column_to_sql(column, indent, type_only=False))
+            columns.append(self._column_to_sql(
+                column, indent, type_only=False, is_nested=False))
         return columns
 
     def table_options(self, replication_params: str) -> str:
