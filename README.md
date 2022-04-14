@@ -1,5 +1,7 @@
 # Nuna: sql_tools
 
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod-redirect.herokuapp.com/)
+
 This repository contains Python libraries for helping developers
 produce and maintain data analysis projects. In particular:
 
