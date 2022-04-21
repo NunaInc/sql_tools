@@ -1,5 +1,5 @@
 name: bazel_build
-on: [push]
+on: [push, pull_request]
 jobs:
   bazel-build-test:
     runs-on: ubuntu-latest

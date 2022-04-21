@@ -203,6 +203,9 @@ message ColumnClickhouseAnnotation {
   // Override the name of the column when generating SQL columns
   // (in clickhouse or via SQL alchemy).
   optional string original_name = 5;
+  // Override the default type for a nested field with this ClickHouse type
+  // when generating SQL create table statements.
+  optional string nested_type_name = 8;
 }
 extend google.protobuf.FieldOptions {
   optional ColumnClickhouseAnnotation column_clickhouse_annotation = 50004;
