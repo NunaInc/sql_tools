@@ -868,12 +868,17 @@ tablePartition
     : KW_PARTITIONED KW_BY LPAREN columnNameTypeConstraint (COMMA columnNameTypeConstraint)* RPAREN
     ;
 
+clauseColumnList
+    : LPAREN columnNameList RPAREN
+    | columnName
+    ;
+
 tableBuckets
-    : KW_CLUSTERED KW_BY LPAREN columnNameList RPAREN (KW_SORTED KW_BY LPAREN columnNameOrderList RPAREN)? KW_INTO Number KW_BUCKETS
+    : KW_CLUSTERED KW_BY clauseColumnList (KW_SORTED KW_BY LPAREN columnNameOrderList RPAREN)? KW_INTO Number KW_BUCKETS
     ;
 
 tableSkewed
-    : KW_SKEWED KW_BY LPAREN columnNameList RPAREN KW_ON LPAREN skewedValueElement RPAREN storedAsDirs?
+    : KW_SKEWED KW_BY clauseColumnList KW_ON LPAREN skewedValueElement RPAREN storedAsDirs?
     ;
 
 rowFormat

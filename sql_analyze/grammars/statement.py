@@ -1637,8 +1637,10 @@ class Create(StatementWithQuery):
                  schema: Optional[Schema.Table] = None):
         super().__init__(parent, name, destination, statement_tokens, query)
         self.schema = schema
-        self.input_format = None
+        self.using_format = None
         self.input_path = None
+        self.location_path = None
+        self.options: Optional[Dict[str]] = None
 
 
 class Insert(StatementWithQuery):
