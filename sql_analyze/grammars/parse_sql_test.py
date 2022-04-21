@@ -191,7 +191,7 @@ class ParseSqlTest(unittest.TestCase):
         self.assertEqual(stmts[0].name, 'CREATE TEMPORARY VIEW')
         self.assertTrue(isinstance(stmts[0], statement.Create))
         self.assertEqual(stmts[0].destination.name, 'foo_view')
-        self.assertEqual(stmts[0].input_format, 'CSV')
+        self.assertEqual(stmts[0].using_format, 'CSV')
         self.assertEqual(stmts[0].input_path, '/foo/bar.csv')
         _, _, stmts = parse_sql_hive.parse_hive_sql_statement(
             'CREATE MATERIALIZED VIEW foo_view AS '
@@ -248,6 +248,46 @@ class ParseSqlTest(unittest.TestCase):
             'SELECT number, avg(number) OVER '
             '(ROWS BETWEEN 3 PRECEDING AND CURRENT ROW) AS mv4 '
             'FROM foo')
+
+    def test_create_options(self):
+        _, _, stmts = parse_sql_hive.parse_hive_sql_statement(
+            'CREATE OR REPLACE TEMP VIEW foobar '
+            'USING csv '
+            'OPTIONS (path "s3://foobucket/mypath/data.csv", header "true")')
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].name, 'CREATE TEMPORARY VIEW')
+        self.assertTrue(isinstance(stmts[0], statement.Create))
+        self.assertEqual(stmts[0].destination.name, 'foobar')
+        self.assertEqual(stmts[0].using_format, 'CSV')
+        self.assertEqual(stmts[0].input_path, 's3://foobucket/mypath/data.csv')
+        _, _, stmts = parse_sql_hive.parse_hive_sql_statement("""
+--@Output: pyschema.client.Baz
+create table baz_table
+using parquet
+clustered by client_id into 10 buckets
+location "${baz_output}"
+as
+  with foo_agg as (
+    select client_id, sum(payment) as payment
+    from foo_table where client_type == "${client_type}"
+    group by client_id
+  )
+  select
+    bar.client_id as client_id,
+    bar.amount - coalesce(foo_agg.payment, 0) as leftover
+  from bar_table left join foo_agg
+  on (bar.client_id = foo_agg.client_id)
+  where bar.client_type == "${client_type}"
+""")
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].name, 'CREATE TABLE')
+        self.assertTrue(isinstance(stmts[0], statement.Create))
+        self.assertEqual(stmts[0].destination.name, 'baz_table')
+        self.assertEqual(stmts[0].using_format, 'PARQUET')
+        self.assertEqual(stmts[0].location_path, '${baz_output}')
+
+
+
 
     def test_create_schema(self):
         stmt = parse_sql_ch.parse_clickhouse_sql_create(
