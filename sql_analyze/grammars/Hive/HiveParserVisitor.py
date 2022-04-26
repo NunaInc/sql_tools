@@ -744,6 +744,11 @@ class HiveParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by HiveParser#clauseColumnList.
+    def visitClauseColumnList(self, ctx:HiveParser.ClauseColumnListContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by HiveParser#tableBuckets.
     def visitTableBuckets(self, ctx:HiveParser.TableBucketsContext):
         return self.visitChildren(ctx)

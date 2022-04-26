@@ -676,12 +676,15 @@ class StatementVisitor(HiveParserVisitor):
         using_clause = ctx.createUsing()
         if not using_clause:
             return
-        create_stmt.input_format = trees.recompose(
+        create_stmt.using_format = trees.recompose(
             using_clause.identifier()).upper()
         if not using_clause.createOptions():
             return
+        create_stmt.options = {}
         for elem in using_clause.createOptions().createOptionsElement():
-            if trees.recompose(elem.identifier()).upper() == 'PATH':
+            opt_name = trees.recompose(elem.identifier()).upper()
+            create_stmt.options[opt_name] = trees.recompose(elem.expression())
+            if opt_name == 'PATH':
                 exp = elem.expression()
                 if (exp.atomExpression() and exp.atomExpression().constant() and
                         exp.atomExpression().constant().StringLiteral()):
@@ -728,4 +731,10 @@ class StatementVisitor(HiveParserVisitor):
                                        tokens.from_tree(ctx),
                                        query).set_limits(ctx)
         self.extractInputFile(ctx, create_stmt)
+        if ctx.tableLocation():
+            # We know is the right format - so is safe
+            # pylint: disable=eval-used
+            create_stmt.location_path = eval(
+                trees.recompose(ctx.tableLocation().StringLiteral()))
+
         self.statements.append(create_stmt)

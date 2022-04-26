@@ -49,3 +49,20 @@ class NestedBad:
     non_nested_field: Annotate(str, [
         annotations.ClickhouseNestedType("Tuple")
     ])
+
+
+@dataclass
+class DoubleNested:
+    """Example class to test two levels of nesting."""
+    field_nested: InnerClass
+    field_tuple: NamedTuple(InnerClass)
+
+
+@annotations.default_compression(value="ZSTD")
+@dataclass
+class NestedCompression:
+    """Example class to test compression in nested types."""
+    field_a: str
+    field_nested: InnerClass
+    field_tuple: NamedTuple(InnerClass)
+    double_nested: DoubleNested
