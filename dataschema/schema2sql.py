@@ -132,7 +132,8 @@ class TableConverter:
         return None
 
     def _column_to_sql(self, column: Schema.Column, indent: int,
-                       type_only: bool, is_nested: bool) -> str:
+                       type_only: bool, is_nested: bool, is_wrapped: bool=False
+                       ) -> str:
         """Returns a Clickhouse SQL column specification for `column`.
 
         Parameters:
@@ -140,6 +141,9 @@ class TableConverter:
         indent: Number of indentations at previous level.
         type_only: Whether or not to return only the column type.
         is_nested: Whether or not the column is a descendant of a nested column.
+        is_wrapped: Whether or not the column's parent is a wrapper, such as 
+                    Array(column) or LowCardinality(column). Used to correctly
+                    format nested columns inside wrappers.
 
         Returns:
         str: Clickhouse SQL column specification for `column`.
@@ -150,7 +154,8 @@ class TableConverter:
         end = ''
         column_type = column.info.column_type
         if (column.info.label == Schema_pb2.ColumnInfo.LABEL_REPEATED and
-                column_type != Schema_pb2.ColumnInfo.TYPE_MAP):
+                column_type != Schema_pb2.ColumnInfo.TYPE_MAP and
+                column_type != Schema_pb2.ColumnInfo.TYPE_NESTED):
             s += 'Array('
             end += ')'
         if column.is_low_cardinality():
@@ -171,7 +176,8 @@ class TableConverter:
                 Schema_pb2.ColumnInfo.TYPE_ARRAY, Schema_pb2.ColumnInfo.TYPE_SET
         ]:
             s += self._column_to_sql(
-                column.fields[0], 0, type_only=True, is_nested=is_nested)
+                column.fields[0], 0, type_only=True, is_nested=is_nested,
+                is_wrapped=True)
         elif column.clickhouse_annotation.type_name:
             s += column.clickhouse_annotation.type_name
         elif column_type == Schema_pb2.ColumnInfo.TYPE_DECIMAL:
@@ -190,15 +196,17 @@ class TableConverter:
             elif column_type == Schema_pb2.ColumnInfo.TYPE_DATETIME_64:
                 s += self._get_timestamp_str(column)
             elif column_type == Schema_pb2.ColumnInfo.TYPE_NESTED:
+                nested_indent = indent + 4 if is_wrapped else indent + 2
                 sub_columns = []
                 for sub_column in column.fields:
                     sub_columns.append(
                         self._column_to_sql(sub_column,
-                                            indent + 2,
+                                            nested_indent,
                                             type_only=False,
                                             is_nested=True))
                 sub_columns_str = ',\n'.join(sub_columns)
-                s += f'(\n{sub_columns_str}\n{GetIndent(indent)})'
+                wrapper_indent = indent + 2 if is_wrapped else indent
+                s += f'(\n{sub_columns_str}\n{GetIndent(wrapper_indent)})'
         s += end
         if not type_only:
             codec = self._get_codec(column, is_nested=is_nested)

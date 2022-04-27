@@ -21,7 +21,7 @@ from typing import List, Optional, Union
 
 _SCHEMA_ANNOTATIONS = '__schema_annotations__'
 
-CLICKHOUSE_SUPPORTED_NESTED_TYPES = { 'Tuple' }
+CLICKHOUSE_SUPPORTED_NESTED_TYPES = { 'Nested', 'Tuple' }
 
 
 def _class_annotate(cls, annotation):

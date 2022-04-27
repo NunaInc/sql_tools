@@ -165,6 +165,20 @@ EXPECTED_CREATE_SQL_NESTED_COMPRESSION = """CREATE TABLE outer (
 )
 """
 
+EXPECTED_CREATE_SQL_REPEATED_NESTED_COLUMN = """CREATE TABLE outer (
+  field_a String,
+  repeated_nested_from_default Nested(
+    field_b String
+  ),
+  repeated_nested_from_annotation Nested(
+    field_b String
+  ),
+  array_of_repeated_nested Array(Nested(
+    field_b String
+  ))
+)
+"""
+
 
 class SchemaTest(unittest.TestCase):
 
@@ -218,6 +232,15 @@ class SchemaTest(unittest.TestCase):
             nesting_test_data.NestedCompression)
         sql = schema2sql.ConvertTable(table, table_name='outer')
         self.assertEqual(sql, EXPECTED_CREATE_SQL_NESTED_COMPRESSION)
+
+    def test_generate_sql_with_repeated_nested_column(self):
+        """
+        """
+        table = python2schema.ConvertDataclass(
+            nesting_test_data.OuterClassWithRepeatedNestedColumn)
+        sql = schema2sql.ConvertTable(table, table_name='outer')
+        print(f"Repeated SQL:\n{sql}")
+        self.assertEqual(sql, EXPECTED_CREATE_SQL_REPEATED_NESTED_COLUMN)
 
     def test_errors(self):
         with self.assertRaisesRegex(ValueError,
@@ -343,7 +366,7 @@ class SchemaTest(unittest.TestCase):
         with self.assertRaisesRegex(
                 ValueError,
                 '`NamedTuple` is not a supported ClickHouse nested type. '
-                'Supported types: Tuple.'):
+                'Supported types: Nested, Tuple.'):
             entity.Annotate(nesting_test_data.InnerClass, [
                 annotations.ClickhouseNestedType('NamedTuple')
             ])

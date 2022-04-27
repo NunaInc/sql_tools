@@ -17,8 +17,8 @@
 from dataclasses import dataclass
 from dataschema import annotations
 from dataschema.entity import Annotate
-from dataschema.schema_types import NamedTuple, OptNamedTuple
-from typing import Optional
+from dataschema.schema_types import NamedTuple, OptNamedTuple, RepeatedNested
+from typing import List, Optional
 
 
 @dataclass
@@ -66,3 +66,12 @@ class NestedCompression:
     field_nested: InnerClass
     field_tuple: NamedTuple(InnerClass)
     double_nested: DoubleNested
+
+
+@dataclass
+class OuterClassWithRepeatedNestedColumn:
+    """Example class to test repeated nested columns."""
+    field_a: str
+    repeated_nested_from_default: List[InnerClass]
+    repeated_nested_from_annotation: RepeatedNested(InnerClass)
+    array_of_repeated_nested: List[RepeatedNested(InnerClass)]

@@ -118,15 +118,27 @@ def WithChType(t: type, type_name: str) -> type:
     """Annotate a type with the clickhouse type to use."""
     return Annotate(t, annotations.ClickhouseType(type_name))
 
+
+def RepeatedNested(t: type) -> type:
+    """
+    In ClickHouse, use Nested to wrap a nested type for a repeated field.
+    ClickHouse Nested type is already a repeated field, so this annotation
+    makes the type a List so that other outputs will treat it as repeated.
+    """
+    return Annotate(List[t], annotations.ClickhouseNestedType('Nested'))
+
+
 def NamedTuple(t: type) -> type:
     """In ClickHouse, use named Tuple instead of Nested for a nested type."""
     return Annotate(t, annotations.ClickhouseNestedType('Tuple'))
+
 
 def OptNamedTuple(t: type) -> type:
     """
     Same as NamedTuple, but allows the field to be optional in output formats besides ClickHouse.
     """
     return Annotate(Optional[t], annotations.ClickhouseNestedType('Tuple'))
+
 
 def Id(t: type) -> type:
     """Annotate a column as a table identifier."""
