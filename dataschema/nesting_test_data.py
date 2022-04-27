@@ -77,7 +77,7 @@ class DoubleRepeatedNested:
 class NestedWithArray:
     array: List[str]
 
-
+@annotations.default_compression(value="ZSTD")
 @dataclass
 class OuterClassWithRepeatedNestedColumn:
     """Example class to test repeated nested columns."""
