@@ -175,6 +175,17 @@ EXPECTED_CREATE_SQL_REPEATED_NESTED_COLUMN = """CREATE TABLE outer (
   ),
   array_of_repeated_nested Array(Nested(
     field_b String
+  )),
+  double_repeated_nested Nested(
+    inner Nested(
+      field_b String
+    )
+  ),
+  repeated_nested_with_array Nested(
+    array Array(String)
+  ),
+  array_of_repeated_nested_with_array Array(Nested(
+    array Array(String)
   ))
 )
 """
@@ -235,11 +246,15 @@ class SchemaTest(unittest.TestCase):
 
     def test_generate_sql_with_repeated_nested_column(self):
         """
+        Should:
+        - Output repeated nested fields as Nested(T) by default, instead of
+          Array(Nested(T))
+        - Output repeated nested fields as Array(Nested(T)) when requested
+        - Correctly indent nested fields within an Array(Nested(T))
         """
         table = python2schema.ConvertDataclass(
             nesting_test_data.OuterClassWithRepeatedNestedColumn)
         sql = schema2sql.ConvertTable(table, table_name='outer')
-        print(f"Repeated SQL:\n{sql}")
         self.assertEqual(sql, EXPECTED_CREATE_SQL_REPEATED_NESTED_COLUMN)
 
     def test_errors(self):

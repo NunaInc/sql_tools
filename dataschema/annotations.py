@@ -514,7 +514,8 @@ class ClickhouseNestedType(ColumnAnnotation):
 
     def __init__(self, nested_type_name: int):
         if nested_type_name not in CLICKHOUSE_SUPPORTED_NESTED_TYPES:
-            supported_types = ', '.join(CLICKHOUSE_SUPPORTED_NESTED_TYPES)
+            supported_types = ', '.join(sorted(
+                CLICKHOUSE_SUPPORTED_NESTED_TYPES))
             raise ValueError(
                 f'`{nested_type_name}` is not a supported ClickHouse nested '
                 f'type. Supported types: {supported_types}.'

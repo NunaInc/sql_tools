@@ -38,6 +38,8 @@ def GetTimestampStr(column: Schema.Column) -> str:
     return s
 
 
+TAB_SIZE = 2
+
 CLICKHOUSE_TYPE_NAME = {
     Schema_pb2.ColumnInfo.TYPE_STRING: 'String',
     Schema_pb2.ColumnInfo.TYPE_BYTES: 'String',
@@ -141,9 +143,8 @@ class TableConverter:
         indent: Number of indentations at previous level.
         type_only: Whether or not to return only the column type.
         is_nested: Whether or not the column is a descendant of a nested column.
-        is_wrapped: Whether or not the column's parent is a wrapper, such as 
-                    Array(column) or LowCardinality(column). Used to correctly
-                    format nested columns inside wrappers.
+        is_wrapped: Whether or not the column's parent is a wrapper, such as
+                    Array(...). Used to indent nested columns inside wrappers.
 
         Returns:
         str: Clickhouse SQL column specification for `column`.
@@ -196,7 +197,10 @@ class TableConverter:
             elif column_type == Schema_pb2.ColumnInfo.TYPE_DATETIME_64:
                 s += self._get_timestamp_str(column)
             elif column_type == Schema_pb2.ColumnInfo.TYPE_NESTED:
-                nested_indent = indent + 4 if is_wrapped else indent + 2
+                # If the nested type is within a wrapper, increase indentation.
+                nested_indent = (indent + (2 * TAB_SIZE) if is_wrapped else
+                                 indent + TAB_SIZE)
+                wrapper_indent = indent + TAB_SIZE if is_wrapped else indent
                 sub_columns = []
                 for sub_column in column.fields:
                     sub_columns.append(
@@ -205,7 +209,6 @@ class TableConverter:
                                             type_only=False,
                                             is_nested=True))
                 sub_columns_str = ',\n'.join(sub_columns)
-                wrapper_indent = indent + 2 if is_wrapped else indent
                 s += f'(\n{sub_columns_str}\n{GetIndent(wrapper_indent)})'
         s += end
         if not type_only:

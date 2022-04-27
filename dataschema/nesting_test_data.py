@@ -69,9 +69,22 @@ class NestedCompression:
 
 
 @dataclass
+class DoubleRepeatedNested:
+    inner: InnerClass
+
+
+@dataclass
+class NestedWithArray:
+    array: List[str]
+
+
+@dataclass
 class OuterClassWithRepeatedNestedColumn:
     """Example class to test repeated nested columns."""
     field_a: str
     repeated_nested_from_default: List[InnerClass]
     repeated_nested_from_annotation: RepeatedNested(InnerClass)
-    array_of_repeated_nested: List[RepeatedNested(InnerClass)]
+    array_of_repeated_nested: List[List[InnerClass]]
+    double_repeated_nested: List[DoubleRepeatedNested]
+    repeated_nested_with_array: List[NestedWithArray]
+    array_of_repeated_nested_with_array: List[List[NestedWithArray]]
