@@ -600,12 +600,14 @@ class FileGeneratorInfo:
                  count: int,
                  file_basename: Optional[str] = None,
                  extension: Optional[str] = None,
-                 num_shards: int = None):
+                 num_shards: int = None,
+                 use_subdirs: bool = False):
         self.generator = generator
         self.count = count
         self.file_basename = file_basename
         self.num_shards = num_shards
         self.extension = extension
+        self.use_subdirs = use_subdirs
 
     def name(self):
         return self.generator.table.name()
@@ -624,6 +626,9 @@ class FileGeneratorInfo:
         return self.name()
 
     def filename(self, dirname: str, shard: Optional[int] = None):
+        if self.use_subdirs:
+            dirname = os.path.join(dirname, self.basename())
+            os.makedirs(dirname, exist_ok=True)
         if shard is None or self.num_shards is None:
             return os.path.join(dirname, self.basename())
         else:
