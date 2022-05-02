@@ -1490,7 +1490,7 @@ class JointGenerator(Generator):
         next_index = id_data.next_index(size)
         if len(self._values) <= next_index:
             self._values.extend(
-                self._child.generate(next_index - start_index, key, context))
+                self._child.generate(next_index + 1 - start_index, key, context))
         if not size:
             return self._values[start_index]
         return self._values[start_index:next_index + 1]
