@@ -69,14 +69,19 @@ class SynthSchemaTest(unittest.TestCase):
                  dir_name,
                  ext='',
                  shards=None,
-                 data_classes=None):
+                 data_classes=None,
+                 sizes=None):
         builder = schema_synth.Builder()
         if data_classes is None:
             data_classes = [A, B]
         gens = builder.schema_generator(output_type=output_type,
                                         data_classes=data_classes)
+        for gen in gens:
+            gen.pregenerate_keys(sizes[gen.name()] if sizes else size)
         file_info = [
-            schema_synth.FileGeneratorInfo(gen, size, gen.name(), ext, shards)
+            schema_synth.FileGeneratorInfo(
+                gen, sizes[gen.name()] if sizes else size,
+                gen.name(), ext, shards)
             for gen in gens
         ]
         return schema_synth.GenerateFiles(
@@ -92,10 +97,14 @@ class SynthSchemaTest(unittest.TestCase):
                          [f.name for f in dataclasses.fields(A)])
         self.assertTrue(all(a['a_id'] == range(1, size + 1)))
 
-    def check_b_dataframe(self, b, size):
+    def check_b_dataframe(self, b, size, a_values=None):
         self.assertEqual(list(b.columns),
                          [f.name for f in dataclasses.fields(B)])
         self.assertTrue(all(b['b_id'] == range(1, size + 1)))
+        if a_values is not None:
+            a_keys = set(a_values['a_id'].tolist())
+            for a_id in b['a_id']:
+                self.assertTrue(a_id in a_keys, f'For: {a_id}')
 
     def test_csv(self):
         size = 10
@@ -136,6 +145,17 @@ class SynthSchemaTest(unittest.TestCase):
         b_data = pandas.read_parquet(files['B'][0])
         self.check_a_dataframe(a_data, size)
         self.check_b_dataframe(b_data, size)
+
+    def test_joint(self):
+        sizes = {'A': 10, 'B': 20}
+        files = self.generate(data_writer.ParquetWriter(),
+                              schema_synth.OutputType.DATAFRAME, 100,
+                              'parquet', '.parquet',
+                              data_classes=[B, A], sizes=sizes)
+        a_data = pandas.read_parquet(files['A'][0])
+        b_data = pandas.read_parquet(files['B'][0])
+        self.check_a_dataframe(a_data, sizes['A'])
+        self.check_b_dataframe(b_data, sizes['B'], a_data)
 
     def test_sql_alchemy(self):
         size = 10

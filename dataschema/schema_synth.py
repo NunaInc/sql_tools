@@ -98,6 +98,9 @@ class GeneratorInfo:
     def name(self):
         return self.table.name()
 
+    def pregenerate_keys(self, size: int):
+        self.generator.pregenerate_keys(size, self.table.name())
+
 
 class Builder:
     """Class for building synthetic data generators for columns, tables, schemas."""
@@ -643,7 +646,7 @@ class FileGeneratorInfo:
         files = []
         for shard in range(num_shards):
             print(f' - Generating {self.name()} - '
-                  f'shard {shard} or {num_shards}')
+                  f'shard {shard} or {num_shards}, {self.count} records')
             data = self.generator.generator.generate(size=self.count,
                                                      key=self.name())
             file_name = self.filename(dirname, shard) + extension

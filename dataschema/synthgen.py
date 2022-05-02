@@ -303,6 +303,10 @@ class Generator:
         """
         raise NotImplementedError('Abstract generator')
 
+    def pregenerate_keys(self, size: int, key: Optional[str] = None):
+        """This pregenerates values for the joint-key sub-generators."""
+        pass
+
     def result_type(self) -> type:
         """Returns the type of the generated value."""
         return None
@@ -909,6 +913,9 @@ class ArrayGenerator(Generator):
         self._value_generator = value_generator
         self._len_generator = len_generator
 
+    def pregenerate_keys(self, size: int, key: Optional[str] = None):
+        self._value_generator.pregenerate_keys(size, key)
+
     @classmethod
     def build(cls, builder: Builder, spec):
         if not isinstance(spec, (tuple, list)) or len(spec) != 2:
@@ -985,6 +992,9 @@ class MakeSetGenerator(Generator):
     def build(cls, builder: Builder, spec):
         return cls(builder.rand, BuildGenerator(builder, spec))
 
+    def pregenerate_keys(self, size: int, key: Optional[str] = None):
+        self._list_generator.pregenerate_keys(size, key)
+
     def generate(self,
                  size: Optional[int] = None,
                  key: Optional[str] = None,
@@ -1025,6 +1035,10 @@ class DictGenerator(Generator):
         return cls(builder.rand, BuildGenerator(builder, spec[0]),
                    BuildGenerator(builder, spec[1]),
                    BuildGenerator(builder, spec[2]))
+
+    def pregenerate_keys(self, size: int, key: Optional[str] = None):
+        self._key_generator.pregenerate_keys(size, key)
+        self._value_generator.pregenerate_keys(size, key)
 
     def generate(self,
                  size: Optional[int] = None,
@@ -1094,6 +1108,10 @@ class CombineGenerator(Generator):
                               self._second.generate(size, key, context))
         ]
 
+    def pregenerate_keys(self, size: int, key: Optional[str] = None):
+        self._first.pregenerate_keys(size, key)
+        self._second.pregenerate_keys(size, key)
+
     def result_type(self) -> type:
         return self._out_type
 
@@ -1160,6 +1178,10 @@ class StrOpGenerator(Generator):
         return (self._name, ([child.save() for child in self._children],
                              self._op))
 
+    def pregenerate_keys(self, size: int, key: Optional[str] = None):
+        for child in self._children:
+            child.pregenerate_keys(size, key)
+
     @classmethod
     def build(cls, builder: Builder, spec):
         if not isinstance(spec, (tuple, list)) or len(spec) != 2:
@@ -1225,6 +1247,10 @@ class RecordGenerator(Generator):
         if key in self._generators:
             return self._generators[key]
         return None
+
+    def pregenerate_keys(self, size: int, key: Optional[str] = None):
+        for k, g in self._generators.items():
+            g.pregenerate_keys(size, _GenKey(k, key))
 
     @classmethod
     def build(cls, builder: Builder, spec):
@@ -1405,8 +1431,11 @@ class JointGenerator(Generator):
             self.index = index
             self.is_choice = is_choice
 
-        def next_index(self):
-            self.index += 1
+        def next_index(self, size):
+            if not size:
+                self.index += 1
+            else:
+                self.index += size
             return self.index - 1
 
     def __init__(self,
@@ -1431,6 +1460,11 @@ class JointGenerator(Generator):
     def add_choice(self, key):
         self._choice_keys.add(key)
 
+    def pregenerate_keys(self, size: int, key: Optional[str] = None):
+        if key not in self._choice_keys and len(self._values) < size:
+            self._values.extend(self._child.generate(
+                size - len(self._values), key, None))
+
     def generate(self,
                  size: Optional[int] = None,
                  key: Optional[str] = None,
@@ -1441,12 +1475,25 @@ class JointGenerator(Generator):
             self._id_data.append(id_data)
         else:
             id_data = self._id_data[self._ids[key]]
-        next_id = id_data.next_index()
-        while len(self._values) <= next_id:
-            self._values.append(self._child.generate(size, key, context))
         if id_data.is_choice:
-            return self._values[self._rand.choice(len(self._values))]
-        return self._values[next_id]
+            if not self._values:
+                raise ValueError(
+                    f'Making a choice for {key} from ungenerated data. Make sure '
+                    'that the source column is generated first in your '
+                    'class order, or call pregenerate_keys on all your generators '
+                    'with desired size')
+            if not size:
+                return self._values[self._rand.choice(len(self._values))]
+            choice = self._rand.choice(len(self._values), size=size)
+            return [self._values[c] for c in choice]
+        start_index = id_data.index
+        next_index = id_data.next_index(size)
+        if len(self._values) <= next_index:
+            self._values.extend(
+                self._child.generate(next_index - start_index, key, context))
+        if not size:
+            return self._values[start_index]
+        return self._values[start_index:next_index + 1]
 
     def result_type(self) -> type:
         return self._child.result_type()
@@ -1663,6 +1710,15 @@ _CLASS_MAP = {
     Names.FIELD: FieldGenerator,
     Names.APPLY: ApplyGenerator,
 }
+
+
+def AddGeneratorClass(key: str, generator_class: type):
+    global _CLASS_MAP
+    if not issubclass(generator_class, Generator):
+        raise ValueError(
+            f'Not a generator class provided: {generator_class}')
+    _CLASS_MAP[key] = generator_class
+
 
 GeneratorSpec = Union[Tuple[str, Any], Generator, Any]
 

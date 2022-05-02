@@ -99,6 +99,8 @@ def generate(data_classes: List[type],
     filenames = _get_flag_map(FLAGS.filenames, 'filenames', str)
     shards = _get_flag_map(FLAGS.shards, 'shards', int)
     default_shards = FLAGS.default_shards if FLAGS.default_shards > 0 else None
+    for gen in gens:
+        gen.pregenerate_keys(counts.get(gen.name(), FLAGS.default_count))
     file_info = [
         schema_synth.FileGeneratorInfo(
             gen, counts.get(gen.name(), FLAGS.default_count),
