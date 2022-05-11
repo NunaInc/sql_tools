@@ -196,7 +196,7 @@ class CsvWriter(BaseWriter):
                   storage_options=self.storage_options)
 
     def open(self, file_name):
-        local_dir = os.path.dirname(file_name)
+        local_dir = get_local_path(os.path.dirname(file_name))
         if local_dir is not None:
             os.makedirs(local_dir, exist_ok=True)
         return file_name
@@ -271,7 +271,7 @@ class JsonWriter(BaseWriter):
                   sort_keys=self.sort_keys)
 
     def open(self, file_name):
-        local_dir = os.path.dirname(file_name)
+        local_dir = get_local_path(os.path.dirname(file_name))
         if local_dir is not None:
             os.makedirs(local_dir, exist_ok=True)
         return smart_open.open(file_name, mode='w', encoding=self.encoding)
@@ -310,7 +310,7 @@ class PickleWriter(BaseWriter):
                     fix_imports=self.fix_imports)
 
     def open(self, file_name):
-        local_dir = os.path.dirname(file_name)
+        local_dir = get_local_path(os.path.dirname(file_name))
         if local_dir is not None:
             os.makedirs(local_dir, exist_ok=True)
         return smart_open.open(file_name, mode='wb', encoding=None)
