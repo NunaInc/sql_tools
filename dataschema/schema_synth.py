@@ -614,8 +614,7 @@ class FileGeneratorInfo:
         self.use_subdirs = use_subdirs
         self.use_part_names = use_part_names
         if use_part_names and not use_subdirs:
-            raise ValueError(
-                'Use part names only with subdirectories.')
+            raise ValueError('Use part names only with subdirectories.')
 
     def name(self):
         return self.generator.table.name()
@@ -636,11 +635,10 @@ class FileGeneratorInfo:
     def filename(self, dirname: str, shard: Optional[int] = None):
         if self.use_subdirs:
             dirname = os.path.join(dirname, self.basename())
-            os.makedirs(dirname, exist_ok=True)
         if self.use_part_names:
             if shard is None:
                 shard = 0
-            return os.path.join(dirname, f'part_{shard:05d}')
+            return os.path.join(dirname, f'part-{shard:05d}')
         if shard is None or self.num_shards is None:
             return os.path.join(dirname, self.basename())
         else:

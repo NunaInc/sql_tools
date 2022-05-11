@@ -20,7 +20,6 @@ load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
 load(
     "@bazel_pylint//:pyrules.bzl",
-    "py_lint_binary",
     "py_lint_library",
     "py_lint_test",
 )
@@ -267,6 +266,7 @@ py_lint_library(
         ":dataschema",
         requirement("SQLAlchemy"),
         requirement("pyarrow"),
+        requirement("smart_open"),
     ],
 )
 
@@ -319,7 +319,9 @@ py_lint_test(
         ":data_writer",
         ":schema_synth",
         requirement("SQLAlchemy"),
+        requirement("absl-py"),
         requirement("pandas"),
+        requirement("s3fs"),
     ],
 )
 
@@ -350,7 +352,7 @@ py_lint_test(
 
 py_lint_test(
     name = "expectations_test",
-    timeout = "short",
+    timeout = "moderate",
     srcs = ["expectations_test.py"],
     rules = "//:pylintrc",
     srcs_version = "PY3",

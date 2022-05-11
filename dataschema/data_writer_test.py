@@ -25,6 +25,7 @@ import sqlalchemy
 import tempfile
 import unittest
 
+from absl import app, flags
 from dataschema.entity import Annotate
 from dataschema import annotations
 from dataschema import data_writer
@@ -34,6 +35,12 @@ from dataschema import schema_synth
 from dataschema import schema2sqlalchemy
 
 from typing import List, Optional
+
+FLAGS = flags.FLAGS
+flags.DEFINE_string(
+    'test_data_dir', None,
+    'If this is set we use it as our data playground. '
+    'Good for test runs w/ s3 if properly setup.')
 
 
 @dataclasses.dataclass
@@ -57,10 +64,14 @@ class B:
 class SynthSchemaTest(unittest.TestCase):
 
     def setUp(self):
-        self.test_dir = tempfile.mkdtemp()
+        if FLAGS.test_data_dir:
+            self.test_dir = FLAGS.test_data_dir
+        else:
+            self.test_dir = tempfile.mkdtemp()
 
     def tearDown(self):
-        shutil.rmtree(self.test_dir)
+        if not FLAGS.test_data_dir:
+            shutil.rmtree(self.test_dir)
 
     def generate(self,
                  output_writer,
@@ -158,6 +169,8 @@ class SynthSchemaTest(unittest.TestCase):
         self.check_b_dataframe(b_data, sizes['B'], a_data)
 
     def test_sql_alchemy(self):
+        if FLAGS.test_data_dir:
+            return
         size = 10
         db_path = os.path.join(self.test_dir, 'sqltest.db')
         # Note: four slashes for absolute paths !
@@ -191,6 +204,9 @@ class SynthSchemaTest(unittest.TestCase):
                         isinstance(value, entity.GetOriginalType(field.type)),
                         f'field: {field} => {value}')
 
+def main(argv):
+    unittest.main(argv=argv)
+
 
 if __name__ == '__main__':
-    unittest.main()
+    app.run(main)

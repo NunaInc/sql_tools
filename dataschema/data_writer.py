@@ -21,6 +21,7 @@ import numpy
 import pickle
 import pyarrow
 import os
+import smart_open
 import urllib.parse
 
 from dataschema import Schema, schema2parquet, schema2pandas
@@ -57,6 +58,25 @@ def _decimals_to_str(dataframe):
     for column in dataframe.columns:
         if _is_decimal_column(dataframe[column]):
             dataframe[column] = [str(value) for value in dataframe[column]]
+
+
+def get_local_path(file_url: str):
+    """If a path is local, return it, else return None."""
+    url_ob = urllib.parse.urlparse(file_url)
+    scheme = url_ob.scheme
+    if scheme in ('file', 'local', ''):
+        return url_ob.path
+    return None
+
+
+def smart_open_name(file_url: str):
+    """Returns the file name to opne w/ smart_open library."""
+    url_ob = urllib.parse.urlparse(file_url)
+    scheme = url_ob.scheme
+    if scheme in ('local', 'file', ''):
+        return url_ob.path
+    return urllib.parse.urlunparse(
+        (scheme, url_ob.netloc, url_ob.path, None, None, None))
 
 
 class BaseWriter:
@@ -156,6 +176,8 @@ class CsvWriter(BaseWriter):
         df = schema2pandas.ToDataFrame(data, table)
         if self.convert_decimals:
             _decimals_to_str(df)
+        if isinstance(file_object, str):
+            file_object = smart_open_name(file_object)
         df.to_csv(file_object,
                   sep=self.sep,
                   na_rep=self.na_rep,
@@ -174,7 +196,9 @@ class CsvWriter(BaseWriter):
                   storage_options=self.storage_options)
 
     def open(self, file_name):
-        os.makedirs(os.path.dirname(file_name), exist_ok=True)
+        local_dir = get_local_path(os.path.dirname(file_name))
+        if local_dir is not None:
+            os.makedirs(local_dir, exist_ok=True)
         return file_name
 
     def writer_type(self) -> WriterType:
@@ -247,8 +271,10 @@ class JsonWriter(BaseWriter):
                   sort_keys=self.sort_keys)
 
     def open(self, file_name):
-        os.makedirs(os.path.dirname(file_name), exist_ok=True)
-        return open(file_name, mode='w', encoding=self.encoding)
+        local_dir = get_local_path(os.path.dirname(file_name))
+        if local_dir is not None:
+            os.makedirs(local_dir, exist_ok=True)
+        return smart_open.open(file_name, mode='w', encoding=self.encoding)
 
     def close(self, file_object):
         file_object.close()
@@ -284,8 +310,10 @@ class PickleWriter(BaseWriter):
                     fix_imports=self.fix_imports)
 
     def open(self, file_name):
-        os.makedirs(os.path.dirname(file_name), exist_ok=True)
-        return open(file_name, mode='wb', encoding=None)
+        local_dir = get_local_path(os.path.dirname(file_name))
+        if local_dir is not None:
+            os.makedirs(local_dir, exist_ok=True)
+        return smart_open.open(file_name, mode='wb', encoding=None)
 
     def close(self, file_object):
         file_object.close()
@@ -334,13 +362,7 @@ class ParquetWriter(BaseWriter):
             # #pyarrow.fs.FileSystem.open_output_stream
             file_compression: str = 'detect',
             file_buffer_size: Optional[int] = None,
-            file_metadata: Optional[Dict[str, str]] = None,
-            # Options for external filesystem connection: S3 and HDFS
-            s3_access_key: Optional[str] = None,
-            s3_secret_key: Optional[str] = None,
-            s3_session_token: Optional[str] = None,
-            hdfs_host: Optional[str] = None,
-            hdfs_port: Optional[int] = None):
+            file_metadata: Optional[Dict[str, str]] = None):
         super().__init__()
         self.no_uint = no_uint
         self.version = version
@@ -356,16 +378,10 @@ class ParquetWriter(BaseWriter):
         self.file_compression = file_compression
         self.file_buffer_size = file_buffer_size
         self.file_metadata = file_metadata
-        self.s3_access_key = s3_access_key
-        self.s3_secret_key = s3_secret_key
-        self.s3_session_token = s3_session_token
-        self.hdfs_host = hdfs_host
-        self.hdfs_port = hdfs_port
 
     def write(self, table: Schema.Table, data: Any, file_object):
         """Writes `data`, which is in the provided `table` schema to a parquet."""
-        fsys = self.filesystem(file_object)
-        path = fsys.normalize_path(self.path(file_object))
+        fsys, path = self.filesystem(file_object)
         fsys.create_dir(os.path.dirname(path))
         output_stream = fsys.open_output_stream(
             path,
@@ -390,28 +406,18 @@ class ParquetWriter(BaseWriter):
         writer.write_table(arrow_table, self.row_group_size)
         writer.close()
 
-    def path(self, file_url: str) -> str:
-        """Returns the path part of a url."""
-        info = urllib.parse.urlparse(file_url)
-        return info.path
-
     def filesystem(self, file_url: str) -> fs.FileSystem:
         """Opens a parquet file from an url/path. Use `s3` or `hdfs` as schemes."""
         info = urllib.parse.urlparse(file_url)
-        if not info.scheme or info.scheme == 'file':
-            return parquet.LocalFileSystem()
+        if not info.scheme or info.scheme in ('file', 'local'):
+            return (parquet.LocalFileSystem(), info.path)
         if info.scheme == 's3':
-            query_params = urllib.parse.parse_qs(info.query)
-            return fs.S3FileSystem(
-                access_key=query_params.get('access_key', self.s3_access_key),
-                secret_key=query_params.get('secret_key', self.s3_secret_key),
-                session_token=query_params.get('session_token',
-                                               self.s3_session_token))
+            # This returns a tuple:
+            return fs.S3FileSystem.from_uri(file_url)
         if info.scheme == 'hdfs':
-            host = info.host if info.host is not None else self.hdfs_host
-            port = info.port if info.port is not None else self.hdfs_port
-            return fs.HadoopFileSystem(host=host, port=port)
-        raise ValueError(f'Unknown url scheme `{info.scheme}` for parquet file')
+            return (fs.HadoopFileSystem.from_uri(file_url), info.path)
+        raise NotImplementedError(
+            f'Unsupported url scheme `{info.scheme}` for parquet file')
 
     def data_types(self) -> List[InputType]:
         return (InputType.DATAFRAME,)
