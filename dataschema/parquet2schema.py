@@ -246,17 +246,13 @@ def ConvertParquetSchema(pfile: parquet.ParquetFile,
 def OpenParquetFile(file_url: str) -> parquet.ParquetFile:
     """Opens a parquet file from an url/path. Use `s3` or `hdfs` as schemes."""
     info = urllib.parse.urlparse(file_url)
-    if not info.scheme or info.scheme == 'file':
+    if not info.scheme or (info.scheme in ('file', 'local')):
         return parquet.ParquetFile(info.path)
     if info.scheme == 's3':
-        query_params = urllib.parse.parse_qs(info.query)
-        fs_s3 = fs.S3FileSystem(access_key=query_params.get('access_key', None),
-                                secret_key=query_params.get('secret_key', None),
-                                session_token=query_params.get(
-                                    'session_token', None))
-        return parquet.ParquetFile(fs_s3.open_input_file(info.path))
+        fs_s3, path = fs.S3FileSystem.from_uri(file_url)
+        return parquet.ParquetFile(fs_s3.open_input_file(path))
     if info.scheme == 'hdfs':
-        port = info.port if info.port is not None else 8020
-        fs_hdfs = fs.HadoopFileSystem(host=info.host, port=port)
+        fs_hdfs = fs.HadoopFileSystem.from_uri(file_url)
         return parquet.ParquetFile(fs_hdfs.open_input_file(info.path))
-    raise ValueError(f'Unknown url scheme `{info.scheme}` for parquet file')
+    raise NotImplementedError(
+        f'Unsupported url scheme `{info.scheme}` for parquet file')
