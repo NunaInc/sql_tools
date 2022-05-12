@@ -654,6 +654,17 @@ class StatementVisitor(HiveParserVisitor):
     def __init__(self):
         self.statements = []
 
+    def visitStatement(self, ctx: HiveParser.StatementContext):
+        start_len = len(self.statements)
+        result = self.visitChildren(ctx)
+        if len(self.statements) == start_len:
+            self.statements.append(
+                statement.GeneralStatement(
+                    parent=None,
+                    name='statement',
+                    statement_tokens=tokens.from_tree(ctx)).set_limits(ctx))
+        return result
+
     def visitQueryStatementExpression(
             self, ctx: HiveParser.QueryStatementExpressionContext):
         query = QueryVisitor()
