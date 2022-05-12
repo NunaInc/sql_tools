@@ -239,15 +239,26 @@ class ParseSqlTest(unittest.TestCase):
 
     def test_split_statements(self):
         for end in ['', ';']:
-            _, _, stmts = parse_sql_hive.parse_hive_sql_statement(
-                'CREATE DATABASE foo; USE foo; SELECT * from bar; SHOW TABLES' + end)
+            code = ('CREATE DATABASE foo; USE\n  foo; '
+                    f'SELECT * from bar; SHOW\n   TABLES{end}')
+            _, _, stmts = parse_sql_hive.parse_hive_sql_statement(code)
             self.assertEqual([stmt.name for stmt in stmts],
-                            ['statement', 'statement', None, 'statement'])
-            self.assertEqual([stmt.recompose() for stmt in stmts],
-                            ['CREATE DATABASE foo',
-                             'USE foo',
-                             'SELECT * FROM bar',
-                             'SHOW TABLES'])
+                             ['statement', 'statement', None, 'statement'])
+            self.assertEqual([stmt.recompose() for stmt in stmts], [
+                'CREATE DATABASE foo', 'USE foo', 'SELECT * FROM bar',
+                'SHOW TABLES'
+            ])
+            expected = [
+                'CREATE DATABASE foo', 'USE\n  foo', 'SELECT * from bar',
+                'SHOW\n   TABLES'
+            ]
+            for stmt in stmts:
+                stmt.start.position = -1
+                stmt.stop.position = -1
+            self.assertEqual([
+                trees.code_extract(code, stmt.start, stmt.stop)
+                for stmt in stmts
+            ], expected)
 
     def test_ch_over(self):
         self.ch_recompose_test(

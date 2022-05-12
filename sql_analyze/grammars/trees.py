@@ -136,7 +136,7 @@ def _code_snippet(code: str, location: CodeLocation):
 def code_extract(code: str, start: CodeLocation, stop: CodeLocation):
     """Extracts a piece from code between start and stop."""
     if start.position >= 0 and stop.position >= 0:
-        return code[start.position:stop.position]
+        return code[start.position:stop.position + 1]
     lines = code.splitlines(keepends=True)
     if (start.line < 1 or start.line > len(lines) or stop.line < 1 or
             stop.line > len(lines)):
