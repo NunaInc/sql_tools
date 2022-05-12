@@ -237,6 +237,18 @@ class ParseSqlTest(unittest.TestCase):
         self.assertEqual(query.name, None)
         self.assertEqual(query.recompose(), 'SELECT foo FROM bar')
 
+    def test_split_statements(self):
+        for end in ['', ';']:
+            _, _, stmts = parse_sql_hive.parse_hive_sql_statement(
+                'CREATE DATABASE foo; USE foo; SELECT * from bar; SHOW TABLES' + end)
+            self.assertEqual([stmt.name for stmt in stmts],
+                            ['statement', 'statement', None, 'statement'])
+            self.assertEqual([stmt.recompose() for stmt in stmts],
+                            ['CREATE DATABASE foo',
+                             'USE foo',
+                             'SELECT * FROM bar',
+                             'SHOW TABLES'])
+
     def test_ch_over(self):
         self.ch_recompose_test(
             'SELECT xid, date, action, NULL AS nf, '
@@ -285,9 +297,6 @@ as
         self.assertEqual(stmts[0].destination.name, 'baz_table')
         self.assertEqual(stmts[0].using_format, 'PARQUET')
         self.assertEqual(stmts[0].location_path, '${baz_output}')
-
-
-
 
     def test_create_schema(self):
         stmt = parse_sql_ch.parse_clickhouse_sql_create(
