@@ -382,7 +382,7 @@ class ParquetWriter(BaseWriter):
     def write(self, table: Schema.Table, data: Any, file_object):
         """Writes `data`, which is in the provided `table` schema to a parquet."""
         fsys, path = self.filesystem(file_object)
-        fsys.create_dir(os.path.dirname(path))
+        fsys.create_dir(os.path.dirname(path), recursive=True)
         output_stream = fsys.open_output_stream(
             path,
             compression=self.file_compression,
