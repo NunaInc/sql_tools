@@ -37,7 +37,7 @@ class B:
     qux: int
 
 
-class TestSchemaProvider(statement.SchemaProvider):
+class TestSchemaProvider(Schema.Provider):
     """Schema provider used for testing."""
 
     def __init__(self):

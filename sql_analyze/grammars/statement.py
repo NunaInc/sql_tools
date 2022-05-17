@@ -33,6 +33,9 @@ def _split_name(name):
     return (None, name)
 
 
+# For backward compatibility per name change:
+SchemaProvider = Schema.Provider
+
 _INDENT = '    '
 
 
@@ -217,16 +220,6 @@ class Graph:
         return list(outputs)
 
 
-class SchemaProvider:
-    """Base class for an object that provides schema from a name."""
-
-    def __init__(self):
-        pass
-
-    def find_schema(self, name: str) -> Optional[Schema.Table]:
-        del name
-
-
 class SchemaInfo:
     """Represents schema information for a statement.
 
@@ -245,7 +238,7 @@ class SchemaInfo:
         self.output = output
 
     @classmethod
-    def from_statement(cls, sql_code: str, schema_provider: SchemaProvider):
+    def from_statement(cls, sql_code: str, schema_provider: Schema.Provider):
         schema_re = re.compile(r'^--@@?Schema:\s*(\w*)\s*([\w\.]*)\s*$')
         output_re = re.compile(r'^--@@?Output\s*:\s*([\w\.]*)\s*$')
         tables = {}

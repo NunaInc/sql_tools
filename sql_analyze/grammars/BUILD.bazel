@@ -46,6 +46,7 @@ py_lint_library(
     srcs_version = "PY3",
     deps = [
         ":grammars",
+        "//dataschema",
         "//sql_analyze/grammars/ClickHouse:parse_lib",
         "//sql_analyze/grammars/Hive:parse_lib",
         requirement("absl-py"),
