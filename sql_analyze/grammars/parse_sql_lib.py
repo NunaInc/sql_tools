@@ -19,6 +19,7 @@ import sys
 
 from antlr4.ParserRuleContext import ParserRuleContext
 from dataclasses import dataclass
+from dataschema import Schema
 from sql_analyze.grammars import graphing, statement, trees
 from sql_analyze.grammars.Hive import parse_sql_lib as parse_sql_hive
 from sql_analyze.grammars.ClickHouse import parse_sql_lib as parse_sql_clickhouse
@@ -123,7 +124,7 @@ def parse_sql(opt: ParseSqlOptions):
 def sql_to_queries(
     sql_code: str,
     dialect: str,
-    schema_provider: Optional[statement.SchemaProvider] = None
+    schema_provider: Optional[Schema.Provider] = None
 ) -> List[statement.Source]:
     if dialect.upper() in ('SPARKSQL', 'HIVE'):
         tree, _, queries = parse_sql_hive.parse_hive_sql_statement(sql_code)
@@ -149,10 +150,9 @@ def sql_to_queries(
 
 
 def sql_to_graph(
-    sql_code: str,
-    dialect: str,
-    schema_provider: Optional[statement.SchemaProvider] = None
-) -> statement.Graph:
+        sql_code: str,
+        dialect: str,
+        schema_provider: Optional[Schema.Provider] = None) -> statement.Graph:
     """Converts a sql statement to a statement Graph.
 
     Arguments:

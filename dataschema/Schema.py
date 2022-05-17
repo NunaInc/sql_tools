@@ -17,7 +17,7 @@
 """Helper class for schema representation in Python."""
 from dataschema import Schema_pb2, strutil, synthgen
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, Iterator, List, Optional
 
 
 def full_name(package: str, name: str):
@@ -748,3 +748,28 @@ class Table:
             if t:
                 diffs.extend(s.compare(t[0]))
         return diffs
+
+
+class Provider:
+    """Base class for an object that provides schema from a name."""
+
+    def __init__(self):
+        pass
+
+    def find_schema(self, name: str) -> Optional[Table]:
+        """Provided a name, returns the corresponding schema."""
+        del name
+
+    def find_dataclass(self, name: str) -> type:
+        """Provided a name, returns the corresponding dataclass."""
+        del name
+
+    def find_dataclasses_by_prefix(self, prefix: str) -> List[type]:
+        """Provided a prefix, returns all dataclasses that start
+        with that prefix."""
+        del prefix
+        return []
+
+    def iterate_dataclasses(self) -> Iterator[type]:
+        """Iterates over all dataclasses known to this provider."""
+        pass
