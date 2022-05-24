@@ -365,3 +365,15 @@ py_lint_test(
         requirement("SQLAlchemy"),
     ],
 )
+
+py_lint_test(
+    name = "type_composition_test",
+    timeout = "short",
+    srcs = ["type_composition_test.py"],
+    rules = "//:pylintrc",
+    srcs_version = "PY3",
+    deps = [
+        ":dataschema",
+        requirement("SQLAlchemy"),
+    ],
+)

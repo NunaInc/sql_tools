@@ -66,6 +66,7 @@ def _Annotate(cls=None, annotation=None):
             supertype = cls.__supertype__
         annotated_type = NewType(f'Annotated_{_CLASS_ID}', supertype)
         setattr(annotated_type, _SCHEMA_ANNOTATIONS, schema_annotations)
+        setattr(annotated_type, '__supertype__', supertype)
         return annotated_type
 
     if cls is None:
@@ -116,7 +117,7 @@ def GetOriginalType(field_cls: type):
 
 def GetStructuredTypeName(field_cls: type):
     """Returns the structure type name for a type, behind annotation."""
-    field_cls = GetAnnotatedType(field_cls)
+    field_cls = GetOriginalType(field_cls)
     if not hasattr(field_cls, '__origin__'):
         return None
     if field_cls.__origin__ is dict:
@@ -125,6 +126,17 @@ def GetStructuredTypeName(field_cls: type):
         return 'list'
     elif field_cls.__origin__ is set:
         return 'set'
+    return None
+
+
+def GetStructuredSubType(field_cls: type, index: int = 0):
+    """For a structured type return the subtype that it contains.
+    Normally for a list index would be 0, for a dict 0 for key, 1 for value."""
+    field_cls = GetOriginalType(field_cls)
+    if not hasattr(field_cls, '__origin__'):
+        return None
+    if index < len(field_cls.__args__):
+        return field_cls.__args__[index]
     return None
 
 
@@ -164,14 +176,19 @@ class FieldTypeChecker:
             elif field_cls.__origin__ is set:
                 self._check(field_cls.__args__[0], depth)
             elif (  # pylint: disable=comparison-with-callable
-                    field_cls.__origin__ == Union and
-                    len(field_cls.__args__) == 2 and
-                    field_cls.__args__[1] == type(None)):
-                if GetStructuredTypeName(field_cls) is not None:
-                    raise ValueError('Cannot have Optional structured fields.'
-                                     '(e.g. Optional[List or Set or Dict])')
+                    field_cls.__origin__ == Union):
+                if (len(field_cls.__args__) == 2 and
+                        field_cls.__args__[1] == type(None)):
+                    # This is an Optional - we are OK w/ it
+                    self._check(field_cls.__args__[0], depth)
+                else:
+                    raise ValueError(
+                        'Union types are not supported. '
+                        f'Found for {self.field_name}: {self.field_cls}')
+                # if GetStructuredTypeName(field_cls) is not None:
+                #     raise ValueError('Cannot have Optional structured fields.'
+                #                      '(e.g. Optional[List or Set or Dict])')
                 # Optional[...]
-                self._check(field_cls.__args__[0], depth)
             else:
                 raise ValueError(f'Invalid origin class for {field_cls}: '
                                  f'`{field_cls.__origin__}`')
@@ -256,9 +273,13 @@ class DataclassChecker:
         return self._check_dataclass_members()
 
 
-def SchemaAnnotations(cls: type):
+def SchemaAnnotations(field_cls: type):
     """Returns the schema annotations of a type."""
     annotations = []
-    if hasattr(cls, _SCHEMA_ANNOTATIONS):
-        annotations.extend(cls.__schema_annotations__)
+    if hasattr(field_cls, _SCHEMA_ANNOTATIONS):
+        annotations.extend(field_cls.__schema_annotations__)
+    if IsOptionalType(field_cls):
+        opt_cls = field_cls.__args__[0]
+        if hasattr(opt_cls, _SCHEMA_ANNOTATIONS):
+            annotations.extend(opt_cls.__schema_annotations__)
     return annotations
