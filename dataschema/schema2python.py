@@ -207,9 +207,9 @@ class TypeInfo:
         return False
 
     @classmethod
-    def wrapped_template(cls, base_type: 'TypeInfo', template_name: str):
+    def wrapped_template(cls, base_types: List['TypeInfo'], template_name: str):
         """Wraps the base type in provided 'template'."""
-        return cls(template_name, None, {'typing'}, [base_type])
+        return cls(template_name, None, {'typing'}, base_types)
 
     def py_code(self):
         """Returns a python code snippet, describing this type."""
@@ -328,10 +328,10 @@ _TYPE_INFO = {
 
 def _ApplyLabel(column: Schema.Column, info: FieldInfo):
     if column.is_repeated():
-        info.type_info = TypeInfo.wrapped_template(info.type_info,
+        info.type_info = TypeInfo.wrapped_template([info.type_info],
                                                    'typing.List')
     elif column.is_optional():
-        info.type_info = TypeInfo.wrapped_template(info.type_info,
+        info.type_info = TypeInfo.wrapped_template([info.type_info],
                                                    'typing.Optional')
 
 
@@ -379,7 +379,7 @@ def GetFieldInfo(column: Schema.Column,
         info.type_info = TypeInfo(name, None, {'typing'},
                                   [element_info.type_info])
         if column.is_optional():
-            info.type_info = TypeInfo.wrapped_template(info.type_info,
+            info.type_info = TypeInfo.wrapped_template([info.type_info],
                                                        'typing.Optional')
         info.nested.extend(element_info.nested)
     elif column.info.column_type == Schema_pb2.ColumnInfo.TYPE_MAP:
@@ -387,11 +387,11 @@ def GetFieldInfo(column: Schema.Column,
                                 sub_nested_name)
         value_info = GetFieldInfo(column.fields[1], force_nested_types,
                                   sub_nested_name)
-        info.type_info = TypeInfo('typing.Dict', None, {'typing'},
-                                  [key_info.type_info, value_info.type_info])
+        info.type_info = TypeInfo.wrapped_template(
+            [key_info.type_info, value_info.type_info], 'typing.Dict')
         if column.is_optional():
-            info.type_info = TypeInfo('typing.Optional', None, {'typing'},
-                                      [info.type_info])
+            info.type_info = TypeInfo.wrapped_template([info.type_info],
+                                                       'typing.Optional')
         info.nested.extend(key_info.nested)
         info.nested.extend(value_info.nested)
     else:
