@@ -48,6 +48,7 @@ _BASE_TYPES = {
 
 
 def _GetColumnType(field_cls: type) -> Optional[int]:
+    is_optional = entity.IsOptionalType(field_cls)
     opt_type = entity.GetOptionalType(field_cls)
     if opt_type is not None:
         field_cls = opt_type
@@ -62,10 +63,11 @@ def _GetColumnType(field_cls: type) -> Optional[int]:
     if struct_name == 'set':
         return Schema_pb2.ColumnInfo.TYPE_SET
     if struct_name == 'list':
-        if (entity.GetOptionalType(field_cls.__args__[0]) or
-                entity.GetStructuredTypeName(field_cls.__args__[0])):
+        element_type = entity.GetStructuredSubType(field_cls)
+        if (entity.IsOptionalType(element_type) or
+                entity.GetStructuredTypeName(element_type) or is_optional):
             return Schema_pb2.ColumnInfo.TYPE_ARRAY
-        return _GetColumnType(field_cls.__args__[0])
+        return _GetColumnType(element_type)
 
 
 def _BuildField(name, cls):
@@ -116,18 +118,17 @@ def ConvertField(field: dataclasses.Field,
         column.add_sub_column(
             ConvertField(
                 _BuildField('element',
-                            entity.GetAnnotatedType(field.type).__args__[0]),
+                            entity.GetStructuredSubType(field.type, 0)),
                 table_name, java_class_name, convert_sub_fields, depth + 1))
     elif column.info.column_type == Schema_pb2.ColumnInfo.TYPE_MAP:
         column.add_sub_column(
             ConvertField(
-                _BuildField('key',
-                            entity.GetAnnotatedType(field.type).__args__[0]),
+                _BuildField('key', entity.GetStructuredSubType(field.type, 0)),
                 table_name, java_class_name, convert_sub_fields, depth + 1))
         column.add_sub_column(
             ConvertField(
-                _BuildField('value',
-                            entity.GetAnnotatedType(field.type).__args__[1]),
+                _BuildField('value', entity.GetStructuredSubType(field.type,
+                                                                 1)),
                 table_name, java_class_name, convert_sub_fields, depth + 1))
     return column
 

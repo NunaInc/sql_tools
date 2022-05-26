@@ -133,9 +133,12 @@ class TableConverter:
             return ', '.join(codecs)
         return None
 
-    def _column_to_sql(self, column: Schema.Column, indent: int,
-                       type_only: bool, is_nested: bool, is_wrapped: bool=False
-                       ) -> str:
+    def _column_to_sql(self,
+                       column: Schema.Column,
+                       indent: int,
+                       type_only: bool,
+                       is_nested: bool,
+                       is_wrapped: bool = False) -> str:
         """Returns a Clickhouse SQL column specification for `column`.
 
         Parameters:
@@ -154,7 +157,9 @@ class TableConverter:
             s += f'{GetIndent(indent)}{column.sql_name()} '
         end = ''
         column_type = column.info.column_type
-        if (column.info.label == Schema_pb2.ColumnInfo.LABEL_REPEATED and
+        if ((column.is_repeated() or
+             column_type in (Schema_pb2.ColumnInfo.TYPE_ARRAY,
+                             Schema_pb2.ColumnInfo.TYPE_SET)) and
                 column_type != Schema_pb2.ColumnInfo.TYPE_MAP and
                 column_type != Schema_pb2.ColumnInfo.TYPE_NESTED):
             s += 'Array('
@@ -162,23 +167,32 @@ class TableConverter:
         if column.is_low_cardinality():
             s += 'LowCardinality('
             end += ')'
-        # ClickHouse nested types (Nested, Tuple) cannot be inside a Nullable.
-        if (column.info.label == Schema_pb2.ColumnInfo.LABEL_OPTIONAL and
-                column_type != Schema_pb2.ColumnInfo.TYPE_NESTED):
+        # ClickHouse nested types (Nested, Tuple, Arrays and Map)
+        # cannot be inside a Nullable.
+        if (column.is_optional() and
+                column_type not in (Schema_pb2.ColumnInfo.TYPE_ARRAY,
+                                    Schema_pb2.ColumnInfo.TYPE_SET,
+                                    Schema_pb2.ColumnInfo.TYPE_MAP,
+                                    Schema_pb2.ColumnInfo.TYPE_NESTED)):
             s += 'Nullable('
             end += ')'
         if column_type == Schema_pb2.ColumnInfo.TYPE_MAP:
-            ktype = self._column_to_sql(
-                column.fields[0], 0, type_only=True, is_nested=is_nested)
-            vtype = self._column_to_sql(
-                column.fields[1], 0, type_only=True, is_nested=is_nested)
+            ktype = self._column_to_sql(column.fields[0],
+                                        0,
+                                        type_only=True,
+                                        is_nested=is_nested)
+            vtype = self._column_to_sql(column.fields[1],
+                                        0,
+                                        type_only=True,
+                                        is_nested=is_nested)
             s += f'Map({ktype}, {vtype})'
-        elif column_type in [
-                Schema_pb2.ColumnInfo.TYPE_ARRAY, Schema_pb2.ColumnInfo.TYPE_SET
-        ]:
-            s += self._column_to_sql(
-                column.fields[0], 0, type_only=True, is_nested=is_nested,
-                is_wrapped=True)
+        elif column_type in (Schema_pb2.ColumnInfo.TYPE_ARRAY,
+                             Schema_pb2.ColumnInfo.TYPE_SET):
+            s += self._column_to_sql(column.fields[0],
+                                     0,
+                                     type_only=True,
+                                     is_nested=is_nested,
+                                     is_wrapped=True)
         elif column.clickhouse_annotation.type_name:
             s += column.clickhouse_annotation.type_name
         elif column_type == Schema_pb2.ColumnInfo.TYPE_DECIMAL:
@@ -198,8 +212,9 @@ class TableConverter:
                 s += self._get_timestamp_str(column)
             elif column_type == Schema_pb2.ColumnInfo.TYPE_NESTED:
                 # If the nested type is within a wrapper, increase indentation.
-                nested_indent = (indent + (2 * TAB_SIZE) if is_wrapped else
-                                 indent + TAB_SIZE)
+                nested_indent = (indent +
+                                 (2 * TAB_SIZE) if is_wrapped else indent +
+                                 TAB_SIZE)
                 wrapper_indent = indent + TAB_SIZE if is_wrapped else indent
                 sub_columns = []
                 for sub_column in column.fields:
@@ -221,8 +236,11 @@ class TableConverter:
         """Returns a list of Clickhouse SQL column specifications."""
         columns = []
         for column in self.table.columns:
-            columns.append(self._column_to_sql(
-                column, indent, type_only=False, is_nested=False))
+            columns.append(
+                self._column_to_sql(column,
+                                    indent,
+                                    type_only=False,
+                                    is_nested=False))
         return columns
 
     def table_options(self, replication_params: str) -> str:

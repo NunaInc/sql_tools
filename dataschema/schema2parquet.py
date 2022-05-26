@@ -61,8 +61,7 @@ def _GetArrayType(column: Schema.Column, no_uint: bool):
     if len(column.fields) != 1:
         raise ValueError(
             f'Array column expected to have one element column: `{column}`')
-    nullable_elem = (
-        column.fields[0].info.label == Schema_pb2.ColumnInfo.LABEL_OPTIONAL)
+    nullable_elem = column.fields[0].is_optional()
     return pyarrow.list_(
         pyarrow.field('element',
                       _GetColumnType(column.fields[0], no_uint),
@@ -73,8 +72,7 @@ def _GetSetType(column: Schema.Column, no_uint: bool):
     if len(column.fields) != 1:
         raise ValueError(
             f'Set column expected to have one element column: `{column}`')
-    nullable_elem = (
-        column.fields[0].info.label == Schema_pb2.ColumnInfo.LABEL_OPTIONAL)
+    nullable_elem = column.fields[0].is_optional()
     return pyarrow.list_(
         pyarrow.field('element',
                       _GetColumnType(column.fields[0], no_uint),
@@ -155,9 +153,8 @@ def _GetColumnType(column: Schema.Column, no_uint: bool):
 
 def ConvertColumn(column: Schema.Column, no_uint: bool = False):
     """Converts a python data Schema column to an arrow field."""
-    non_nullable = column.info.label == Schema_pb2.ColumnInfo.LABEL_REQUIRED
-    if (column.info.label == Schema_pb2.ColumnInfo.LABEL_REPEATED and
-            column.info.column_type not in _STRUCT_TYPES):
+    non_nullable = column.is_required()
+    if (column.is_repeated() and column.info.column_type not in _STRUCT_TYPES):
         return pyarrow.field(column.info.name,
                              pyarrow.list_(
                                  pyarrow.field('element',

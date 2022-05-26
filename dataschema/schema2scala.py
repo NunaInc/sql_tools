@@ -85,22 +85,21 @@ class ScalaTypeInfo:
                     not isinstance(type_name[1], ScalaTypeInfo)):
                 raise ValueError('Invalid Map type initialized')
         elif not isinstance(type_name, str):
-            raise ValueError('Invalid non-Map type initialized')
+            raise ValueError(f'Invalid non-Map type initialized: {self}')
 
     def is_map(self):
-        return (self.template_type is not None and
-                len(self.template_type) == 1 and self.template_type[0] == 'Map')
+        return self.template_type is not None and 'Map' in self.template_type
 
     def __str__(self) -> str:
         return f'{self.type_name} / {self.import_name} / {self.template_type}'
 
-    def add_template_type(self, template_type: str) -> 'ScalaTypeInfo':
-        if template_type is None:
+    def add_template_type(self, template_type: List[str]) -> 'ScalaTypeInfo':
+        if not template_type:
             return self
         if self.template_type is None:
-            self.template_type = [template_type]
+            self.template_type = template_type
         else:
-            self.template_type.append(template_type)
+            self.template_type.extend(template_type)
         return self
 
     def scala_type_str(self) -> str:
@@ -313,18 +312,21 @@ class TableConverter:
 
     def _get_column_struct_template(self,
                                     column: Schema.Column) -> Optional[str]:
-        if column.info.label == Schema_pb2.ColumnInfo.LABEL_OPTIONAL:
-            return 'Option'
-        if column.info.label == Schema_pb2.ColumnInfo.LABEL_REQUIRED:
-            return None
-        if column.info.label != Schema_pb2.ColumnInfo.LABEL_REPEATED:
-            raise ValueError(
-                f'Label not specified for column `{column.name()}`')
-        if column.info.repeated_semantics == Schema_pb2.ColumnInfo.REPEATED_ARRAY:
-            return 'Array'
-        if column.info.repeated_semantics == Schema_pb2.ColumnInfo.REPEATED_SET:
-            return 'Set'
-        return 'Seq'
+        templates = []
+        if column.info.column_type == Schema_pb2.ColumnInfo.TYPE_ARRAY:
+            templates.append('Array')
+        elif column.info.column_type == Schema_pb2.ColumnInfo.TYPE_SET:
+            templates.append('Set')
+        elif column.is_repeated():
+            if column.info.repeated_semantics == Schema_pb2.ColumnInfo.REPEATED_ARRAY:
+                templates.append('Array')
+            elif column.info.repeated_semantics == Schema_pb2.ColumnInfo.REPEATED_SET:
+                templates.append('Set')
+            else:
+                templates.append('Seq')
+        if column.is_optional():
+            templates.append('Option')
+        return templates
 
     def _get_map_type_info(self, column: Schema.Column,
                            exports: TypeExports) -> ScalaTypeInfo:
@@ -334,7 +336,10 @@ class TableConverter:
                 t for t in key_type.template_type if t != 'Option'
             ]
         val_type = self._get_column_type(column.fields[1], exports)
-        return ScalaTypeInfo((key_type, val_type), template_type=['Map'])
+        template_type = ['Map']
+        if column.is_optional():
+            template_type.append('Option')
+        return ScalaTypeInfo((key_type, val_type), template_type=template_type)
 
     def _get_column_type(self, column: Schema.Column,
                          exports: TypeExports) -> ScalaTypeInfo:
@@ -347,8 +352,9 @@ class TableConverter:
                 column.fields[0], exports).add_template_type(
                     self._get_column_struct_template(column))
         elif column.info.column_type == Schema_pb2.ColumnInfo.TYPE_SET:
-            return self._get_column_type(column.fields[0],
-                                         exports).add_template_type('Set')
+            return self._get_column_type(
+                column.fields[0], exports).add_template_type(
+                    self._get_column_struct_template(column))
         elif column.info.column_type == Schema_pb2.ColumnInfo.TYPE_MAP:
             return self._get_map_type_info(column, exports)
         else:
@@ -411,13 +417,13 @@ class TableConverter:
         ]) + nested_classes_content, imports)
 
 
-def ConvertTable(
-        table: Schema.Table,
-        java_package: Optional[str] = None,
-        scala_annotations: Optional[ScalaAnnotationClasses] = None) -> str:
+def ConvertTable(table: Schema.Table,
+                 java_package: Optional[str] = None,
+                 scala_annotations: Optional[ScalaAnnotationClasses] = None,
+                 type_exports: Optional[TypeExports] = None) -> str:
     """Converts a Schema table to a scala snippet."""
     converter = TableConverter(table, scala_annotations)
-    (classes, imports) = converter.to_scala()
+    (classes, imports) = converter.to_scala(type_exports)
     if java_package is None:
         java_package = table.info.java_package
     return (f'package {java_package}\n'

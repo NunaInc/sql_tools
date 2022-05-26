@@ -52,14 +52,16 @@ class TableConverter:
         end = ''
         notes = []
         column_type = column.info.column_type
-        if (column.info.label == Schema_pb2.ColumnInfo.LABEL_REPEATED and
+        if ((column.is_repeated() or
+             column_type in (Schema_pb2.ColumnInfo.TYPE_ARRAY,
+                             Schema_pb2.ColumnInfo.TYPE_SET)) and
                 column_type != Schema_pb2.ColumnInfo.TYPE_MAP):
             s += 'Array('
             end += ')'
         if column.is_low_cardinality():
             s += 'LowCardinality('
             end += ')'
-        if column.info.label == Schema_pb2.ColumnInfo.LABEL_REQUIRED:
+        if column.is_required():
             notes.append('not null')
         if column_type == Schema_pb2.ColumnInfo.TYPE_MAP:
             ktype = self._column_to_dbml(column.fields[0], 0, type_only=True)
