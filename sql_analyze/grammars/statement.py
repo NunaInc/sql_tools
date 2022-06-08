@@ -1582,6 +1582,43 @@ class GeneralStatement(Source):
             node.add_inlink(graph.node_by_source(child), LinkType.INCLUDED_AUX)
 
 
+class DbStatement(GeneralStatement):
+
+    def __init__(self, name: str, db_name: str,
+                 statement_tokens: tokens.Tokens):
+        super().__init__(None, name, statement_tokens)
+        self.db_name = db_name
+
+
+class DbCreate(DbStatement):
+
+    def __init__(self, name, db_name, statement_tokens: tokens.Tokens):
+        super().__init__(name, db_name, statement_tokens)
+        self.if_not_exists = False
+        self.location_path = None
+        self.comment = None
+
+
+class DbDrop(DbStatement):
+
+    def __init__(self, name, db_name, statement_tokens: tokens.Tokens):
+        super().__init__(name, db_name, statement_tokens)
+        self.if_exists = False
+
+
+class DbUse(DbStatement):
+    pass
+
+
+class Drop(GeneralStatement):
+
+    def __init__(self, name: Optional[str], statement_tokens: tokens.Tokens,
+                 destination: Source):
+        super().__init__(None, name, statement_tokens)
+        self.destination = destination
+        self.if_exists = False
+
+
 class StatementWithQuery(GeneralStatement):
     """A statement that wraps a query and writes to a destination."""
 
@@ -1633,6 +1670,7 @@ class Create(StatementWithQuery):
         self.using_format = None
         self.input_path = None
         self.location_path = None
+        self.if_not_exists = False
         self.options: Optional[Dict[str]] = None
 
 

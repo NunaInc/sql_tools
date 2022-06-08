@@ -716,14 +716,19 @@ class StatementVisitor(HiveParserVisitor):
                                        tokens.from_tree(ctx),
                                        query).set_limits(ctx)
         self.extractInputFile(ctx, create_stmt)
+        if ctx.ifNotExists():
+            create_stmt.if_not_exists = True
         self.statements.append(create_stmt)
 
     def visitCreateMaterializedViewStatement(
             self, ctx: HiveParser.CreateMaterializedViewStatementContext):
         (query, destination) = self.visitCTEStatement(ctx)
-        self.statements.append(
-            statement.Create(None, 'CREATE MATERIALIZED VIEW', destination,
-                             tokens.from_tree(ctx), query).set_limits(ctx))
+        create_stmt = statement.Create(None, 'CREATE MATERIALIZED VIEW',
+                                       destination, tokens.from_tree(ctx),
+                                       query).set_limits(ctx)
+        if ctx.ifNotExists():
+            create_stmt.if_not_exists = True
+        self.statements.append(create_stmt)
 
     def visitCreateTableStatement(self,
                                   ctx: HiveParser.CreateTableStatementContext):
@@ -747,5 +752,83 @@ class StatementVisitor(HiveParserVisitor):
             # pylint: disable=eval-used
             create_stmt.location_path = eval(
                 trees.recompose(ctx.tableLocation().StringLiteral()))
+        if ctx.ifNotExists():
+            create_stmt.if_not_exists = True
 
+        self.statements.append(create_stmt)
+
+    def visitDropTableStatement(self,
+                                ctx: HiveParser.DropTableStatementContext):
+        name = trees.recompose(ctx.tableName())
+        destination = statement.Table(parent=None,
+                                      name=name,
+                                      original_name=name).set_limits(
+                                          ctx.tableName())
+        drop_stmt = statement.Drop('DROP TABLE', tokens.from_tree(ctx),
+                                   destination).set_limits(ctx)
+        if ctx.ifExists():
+            drop_stmt.if_exists = True
+        self.statements.append(drop_stmt)
+
+    def _processDropViewStatement(self, ctx, stmt_name):
+        name = trees.recompose(ctx.viewName())
+        destination = statement.View(parent=None, name=name,
+                                     original_name=name).set_limits(
+                                         ctx.viewName())
+        drop_stmt = statement.Drop(stmt_name, tokens.from_tree(ctx),
+                                   destination).set_limits(ctx)
+        if ctx.ifExists():
+            drop_stmt.if_exists = True
+        self.statements.append(drop_stmt)
+
+    def visitDropViewStatement(self, ctx: HiveParser.DropTableStatementContext):
+        self._processDropViewStatement(ctx, 'DROP VIEW')
+
+    def visitDropMaterializedViewStatement(
+            self, ctx: HiveParser.DropMaterializedViewStatementContext):
+        self._processDropViewStatement(ctx, 'DROP MATERIALIZED VIEW')
+
+    def visitSwitchDatabaseStatement(
+            self, ctx: HiveParser.SwitchDatabaseStatementContext):
+        db_name = trees.recompose(ctx.identifier())
+        self.statements.append(
+            statement.DbUse('USE', db_name,
+                            tokens.from_tree(ctx)).set_limits(ctx))
+
+    def visitDropDatabaseStatement(
+            self, ctx: HiveParser.DropDatabaseStatementContext):
+        db_name = trees.recompose(ctx.identifier())
+        name = 'DROP'
+        if ctx.KW_DATABASE():
+            name += ' DATABASE'
+        elif ctx.KW_SCHEMA():
+            name += ' SCHEMA'
+        drop_stmt = statement.DbDrop(name, db_name,
+                                     tokens.from_tree(ctx)).set_limits(ctx)
+        if ctx.ifExists():
+            drop_stmt.if_exists = True
+        self.statements.append(drop_stmt)
+
+    def visitCreateDatabaseStatement(
+            self, ctx: HiveParser.CreateDatabaseStatementContext):
+        db_name = trees.recompose(ctx.identifier())
+        name = 'CREATE'
+        if ctx.KW_DATABASE():
+            name += ' DATABASE'
+        elif ctx.KW_SCHEMA():
+            name += ' SCHEMA'
+        create_stmt = statement.DbCreate(name, db_name,
+                                         tokens.from_tree(ctx)).set_limits(ctx)
+        if ctx.ifNotExists():
+            create_stmt.if_not_exists = True
+        if ctx.dbLocation():
+            # We know is the right format - so is safe
+            # pylint: disable=eval-used
+            create_stmt.location_path = eval(
+                trees.recompose(ctx.dbLocation().StringLiteral()))
+        if ctx.databaseComment():
+            # We know is the right format - so is safe
+            # pylint: disable=eval-used
+            create_stmt.comment = eval(
+                trees.recompose(ctx.databaseComment().StringLiteral()))
         self.statements.append(create_stmt)
