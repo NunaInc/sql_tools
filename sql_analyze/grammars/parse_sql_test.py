@@ -243,7 +243,7 @@ class ParseSqlTest(unittest.TestCase):
                     f'SELECT * from bar; SHOW\n   TABLES{end}')
             _, _, stmts = parse_sql_hive.parse_hive_sql_statement(code)
             self.assertEqual([stmt.name for stmt in stmts],
-                             ['statement', 'statement', None, 'statement'])
+                             ['CREATE DATABASE', 'USE', None, 'statement'])
             self.assertEqual([stmt.recompose() for stmt in stmts], [
                 'CREATE DATABASE foo', 'USE foo', 'SELECT * FROM bar',
                 'SHOW TABLES'
@@ -345,6 +345,83 @@ ENGINE = MergeTree()
 ORDER BY (id, fsint32)
 PARTITION BY (toYYYYMM(fdate))
 SETTINGS index_granularity = 8192""")
+
+    def test_drop(self):
+        _, _, stmts = parse_sql_hive.parse_hive_sql_statement(
+            'DROP TABLE foobar')
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].name, 'DROP TABLE')
+        self.assertTrue(isinstance(stmts[0], statement.Drop))
+        self.assertEqual(stmts[0].destination.name, 'foobar')
+        self.assertFalse(stmts[0].if_exists)
+        _, _, stmts = parse_sql_hive.parse_hive_sql_statement(
+            'DROP TABLE if exists foobar')
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].name, 'DROP TABLE')
+        self.assertTrue(isinstance(stmts[0], statement.Drop))
+        self.assertEqual(stmts[0].destination.name, 'foobar')
+        self.assertTrue(stmts[0].if_exists)
+        _, _, stmts = parse_sql_hive.parse_hive_sql_statement(
+            'DROP VIEW foobar')
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].name, 'DROP VIEW')
+        self.assertTrue(isinstance(stmts[0], statement.Drop))
+        self.assertEqual(stmts[0].destination.name, 'foobar')
+        self.assertTrue(isinstance(stmts[0].destination, statement.View))
+        self.assertFalse(stmts[0].if_exists)
+        _, _, stmts = parse_sql_hive.parse_hive_sql_statement(
+            'DROP MATERIALIZED VIEW foobar')
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].name, 'DROP MATERIALIZED VIEW')
+        self.assertTrue(isinstance(stmts[0], statement.Drop))
+        self.assertEqual(stmts[0].destination.name, 'foobar')
+        self.assertTrue(isinstance(stmts[0].destination, statement.View))
+        self.assertFalse(stmts[0].if_exists)
+        _, _, stmts = parse_sql_hive.parse_hive_sql_statement(
+            'DROP VIEW if exists foobar')
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].name, 'DROP VIEW')
+        self.assertTrue(isinstance(stmts[0], statement.Drop))
+        self.assertEqual(stmts[0].destination.name, 'foobar')
+        self.assertTrue(isinstance(stmts[0].destination, statement.View))
+        self.assertTrue(stmts[0].if_exists)
+
+    def test_db(self):
+        _, _, stmts = parse_sql_hive.parse_hive_sql_statement(
+            'create database foo COMMENT "bar" LOCATION \'baz\'')
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].name, 'CREATE DATABASE')
+        self.assertEqual(stmts[0].db_name, 'foo')
+        self.assertTrue(isinstance(stmts[0], statement.DbCreate))
+        self.assertEqual(stmts[0].comment, 'bar')
+        self.assertEqual(stmts[0].location_path, 'baz')
+        self.assertFalse(stmts[0].if_not_exists)
+        _, _, stmts = parse_sql_hive.parse_hive_sql_statement(
+            'create schema if not exists foo')
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].name, 'CREATE SCHEMA')
+        self.assertEqual(stmts[0].db_name, 'foo')
+        self.assertTrue(isinstance(stmts[0], statement.DbCreate))
+        self.assertTrue(stmts[0].if_not_exists)
+        _, _, stmts = parse_sql_hive.parse_hive_sql_statement(
+            'drop database foo')
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].name, 'DROP DATABASE')
+        self.assertEqual(stmts[0].db_name, 'foo')
+        self.assertTrue(isinstance(stmts[0], statement.DbDrop))
+        self.assertFalse(stmts[0].if_exists)
+        _, _, stmts = parse_sql_hive.parse_hive_sql_statement(
+            'drop schema if exists foo')
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].name, 'DROP SCHEMA')
+        self.assertEqual(stmts[0].db_name, 'foo')
+        self.assertTrue(isinstance(stmts[0], statement.DbDrop))
+        self.assertTrue(stmts[0].if_exists)
+        _, _, stmts = parse_sql_hive.parse_hive_sql_statement('use foo')
+        self.assertEqual(len(stmts), 1)
+        self.assertEqual(stmts[0].name, 'USE')
+        self.assertEqual(stmts[0].db_name, 'foo')
+        self.assertTrue(isinstance(stmts[0], statement.DbUse))
 
     def recompose_test(self, sql: str, print_tree: bool = False):
         self.hive_recompose_test(sql, print_tree)
