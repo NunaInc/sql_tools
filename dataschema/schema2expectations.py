@@ -248,7 +248,7 @@ def GetDataExpectations(
                     'result_format':
                         GetResultFormat(result_format),
                 }))
-    if column.data_annotation.dq_field.format:
+    if column.data_annotation.dq_field.format and engine == EngineType.PANDAS:
         # Unfortunately no way to specify the datetime format per-se
         expectations.append(
             ExpectationConfiguration(
@@ -263,11 +263,28 @@ def GetDataExpectations(
                 expectation_type='expect_column_values_to_match_regex',
                 kwargs={
                     'column': column_name,
-                    'regex': column.data_annotation.dq_field.regexp(),
+                    'regex': column.data_annotation.dq_field.regexp,
                     'result_format': GetResultFormat(result_format),
                 }))
     return expectations
 
+def GetIdExpectation(
+    id_list: List[str], 
+    result_format: Optional[ResultFormat] = None
+) -> ExpectationConfiguration:
+    if len(id_list) > 1:
+        return ExpectationConfiguration(
+                expectation_type='expect_compound_columns_to_be_unique',
+                kwargs={
+                    'column_list': id_list,
+                    'result_format': GetResultFormat(result_format),
+                })
+    return ExpectationConfiguration(
+            expectation_type='expect_column_values_to_be_unique',
+            kwargs={
+                'column': id_list[0],
+                'result_format': GetResultFormat(result_format),
+            })
 
 def ConvertColumn(
     column: Schema.Column,
@@ -293,6 +310,7 @@ def ConvertTable(
     result_format: Optional[ResultFormat] = None
 ) -> List[ExpectationConfiguration]:
     expectations = []
+    id_list = []
     index = 0
     for column in table.columns:
         expectations.append(
@@ -303,6 +321,19 @@ def ConvertTable(
                     'column_index': index,
                     'result_format': GetResultFormat(result_format)
                 }))
+        if not column.is_optional():
+            expectations.append(
+                ExpectationConfiguration(
+                    expectation_type='expect_column_values_to_not_be_null',
+                    kwargs={
+                        'column': _GetColumnName(column, engine),
+                        'result_format': GetResultFormat(result_format)
+                    })
+            )
+        if column.is_id():
+            id_list.append(_GetColumnName(column, engine))
         index += 1
         expectations.extend(ConvertColumn(column, engine, result_format))
+    if id_list:
+        expectations.append(GetIdExpectation(id_list, result_format))
     return expectations
