@@ -269,7 +269,7 @@ def GetDataExpectations(
     return expectations
 
 def GetIdExpectation(
-    id_list: List[str], 
+    id_list: List[str],
     result_format: Optional[ResultFormat] = None
 ) -> ExpectationConfiguration:
     if len(id_list) > 1:

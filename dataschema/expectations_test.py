@@ -43,8 +43,7 @@ from dataschema.entity import Annotate
 @dataclass
 class TestProtoWithDqAnnotations(schema_test_data.TestProto):
     fdqannotated_enum_value: Annotate(str, annotations.DqField(enum_values=['a', 'b']))
-    fdqannotated_regexp: Annotate(str, annotations.DqField(regexp="^[A-Z]{2}"))
-    
+    fdqannotated_regexp: Annotate(str, annotations.DqField(regexp='^[A-Z]{2}'))
 
 @dataclass
 class DataTest:
