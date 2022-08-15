@@ -34,10 +34,16 @@ from dataschema import (
     schema2sqlalchemy,
     schema_synth,
     schema_test_data,
+    annotations
 )
 from dataschema.schema_types import (Int8, Int16, Int32, Int64, UInt8, UInt16,
                                      UInt32, Float32, Float64, Decimal)
+from dataschema.entity import Annotate
 
+@dataclass
+class TestProtoWithDqAnnotations(schema_test_data.TestProto):
+    fdqannotated_enum_value: Annotate(str, annotations.DqField(enum_values=['a', 'b']))
+    fdqannotated_regexp: Annotate(str, annotations.DqField(regexp='^[A-Z]{2}'))
 
 @dataclass
 class DataTest:
@@ -73,6 +79,13 @@ _PANDAS_EXPECTATIONS = [
         }
     },
     {
+        'expectation_type': 'expect_column_values_to_not_be_null',
+        'kwargs': {
+            'column': 'id',
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
         'expectation_type': 'expect_column_values_to_be_in_type_list',
         'kwargs': {
             'column': 'id',
@@ -94,6 +107,13 @@ _PANDAS_EXPECTATIONS = [
         'kwargs': {
             'column': 'fint32',
             'column_index': 1,
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
+        'expectation_type': 'expect_column_values_to_not_be_null',
+        'kwargs': {
+            'column': 'fint32',
             'result_format': 'SUMMARY'
         }
     },
@@ -123,6 +143,13 @@ _PANDAS_EXPECTATIONS = [
         }
     },
     {
+        'expectation_type': 'expect_column_values_to_not_be_null',
+        'kwargs': {
+            'column': 'fsint32',
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
         'expectation_type': 'expect_column_values_to_be_in_type_list',
         'kwargs': {
             'column': 'fsint32',
@@ -144,6 +171,13 @@ _PANDAS_EXPECTATIONS = [
         'kwargs': {
             'column': 'fint64',
             'column_index': 3,
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
+        'expectation_type': 'expect_column_values_to_not_be_null',
+        'kwargs': {
+            'column': 'fint64',
             'result_format': 'SUMMARY'
         }
     },
@@ -302,6 +336,13 @@ _PANDAS_EXPECTATIONS = [
         }
     },
     {
+        'expectation_type': 'expect_column_values_to_not_be_null',
+        'kwargs': {
+            'column': 'frep_seq',
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
         'expectation_type': 'expect_column_values_to_be_of_type',
         'kwargs': {
             'column': 'frep_seq',
@@ -318,6 +359,13 @@ _PANDAS_EXPECTATIONS = [
         }
     },
     {
+        'expectation_type': 'expect_column_values_to_not_be_null',
+        'kwargs': {
+            'column': 'frep_array',
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
         'expectation_type': 'expect_column_values_to_be_of_type',
         'kwargs': {
             'column': 'frep_array',
@@ -330,6 +378,13 @@ _PANDAS_EXPECTATIONS = [
         'kwargs': {
             'column': 'frep_set',
             'column_index': 14,
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
+        'expectation_type': 'expect_column_values_to_not_be_null',
+        'kwargs': {
+            'column': 'frep_set',
             'result_format': 'SUMMARY'
         }
     },
@@ -414,6 +469,13 @@ _PANDAS_EXPECTATIONS = [
         }
     },
     {
+        'expectation_type': 'expect_column_values_to_not_be_null',
+        'kwargs': {
+            'column': 'finitialized',
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
         'expectation_type': 'expect_column_values_to_be_of_type',
         'kwargs': {
             'column': 'finitialized',
@@ -494,6 +556,76 @@ _PANDAS_EXPECTATIONS = [
             'result_format': 'SUMMARY'
         }
     },
+    {
+        'expectation_type': 'expect_column_to_exist',
+        'kwargs': {
+            'column': 'fdqannotated_enum_value',
+            'column_index': 24,
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
+        'expectation_type': 'expect_column_values_to_not_be_null',
+        'kwargs': {
+            'column': 'fdqannotated_enum_value',
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
+        'expectation_type': 'expect_column_values_to_be_of_type',
+        'kwargs': {
+            'column': 'fdqannotated_enum_value',
+            'type_': 'str',
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
+        'expectation_type': 'expect_column_values_to_be_in_set',
+        'kwargs': {
+            'column': 'fdqannotated_enum_value',
+            'value_set': ['a', 'b'],
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
+        'expectation_type': 'expect_column_to_exist',
+        'kwargs': {
+            'column': 'fdqannotated_regexp',
+            'column_index': 25,
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
+        'expectation_type': 'expect_column_values_to_not_be_null',
+        'kwargs': {
+            'column': 'fdqannotated_regexp',
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
+        'expectation_type': 'expect_column_values_to_be_of_type',
+        'kwargs': {
+            'column': 'fdqannotated_regexp',
+            'type_': 'str',
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
+        'expectation_type': 'expect_column_values_to_match_regex',
+        'kwargs': {
+            'column': 'fdqannotated_regexp',
+            'regex': '^[A-Z]{2}',
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
+        'expectation_type': 'expect_column_values_to_be_unique',
+        'kwargs': {
+            'column': 'id',
+            'result_format': 'SUMMARY'
+        }
+    },
+
 ]
 
 _SPARK_EXPECTATIONS = [
@@ -504,6 +636,13 @@ _SPARK_EXPECTATIONS = [
             'result_format': 'SUMMARY'
         },
         'expectation_type': 'expect_column_to_exist'
+    },
+    {
+        'kwargs': {
+            'column': 'id',
+            'result_format': 'SUMMARY'
+        },
+        'expectation_type': 'expect_column_values_to_not_be_null',
     },
     {
         'kwargs': {
@@ -533,6 +672,13 @@ _SPARK_EXPECTATIONS = [
     {
         'kwargs': {
             'column': 'fint32',
+            'result_format': 'SUMMARY'
+        },
+        'expectation_type': 'expect_column_values_to_not_be_null',
+    },
+    {
+        'kwargs': {
+            'column': 'fint32',
             'type_': 'LongType',
             'result_format': 'SUMMARY'
         },
@@ -558,6 +704,13 @@ _SPARK_EXPECTATIONS = [
     {
         'kwargs': {
             'column': 'fsint32',
+            'result_format': 'SUMMARY'
+        },
+        'expectation_type': 'expect_column_values_to_not_be_null',
+    },
+    {
+        'kwargs': {
+            'column': 'fsint32',
             'type_': 'IntegerType',
             'result_format': 'SUMMARY'
         },
@@ -579,6 +732,13 @@ _SPARK_EXPECTATIONS = [
             'result_format': 'SUMMARY'
         },
         'expectation_type': 'expect_column_to_exist'
+    },
+    {
+        'kwargs': {
+            'column': 'fint64',
+            'result_format': 'SUMMARY'
+        },
+        'expectation_type': 'expect_column_values_to_not_be_null',
     },
     {
         'kwargs': {
@@ -737,6 +897,13 @@ _SPARK_EXPECTATIONS = [
     {
         'kwargs': {
             'column': 'frep_seq',
+            'result_format': 'SUMMARY'
+        },
+        'expectation_type': 'expect_column_values_to_not_be_null',
+    },
+    {
+        'kwargs': {
+            'column': 'frep_seq',
             'type_': 'ArrayType',
             'result_format': 'SUMMARY'
         },
@@ -753,6 +920,13 @@ _SPARK_EXPECTATIONS = [
     {
         'kwargs': {
             'column': 'frep_array',
+            'result_format': 'SUMMARY'
+        },
+        'expectation_type': 'expect_column_values_to_not_be_null',
+    },
+    {
+        'kwargs': {
+            'column': 'frep_array',
             'type_': 'ArrayType',
             'result_format': 'SUMMARY'
         },
@@ -765,6 +939,13 @@ _SPARK_EXPECTATIONS = [
             'result_format': 'SUMMARY'
         },
         'expectation_type': 'expect_column_to_exist'
+    },
+    {
+        'kwargs': {
+            'column': 'frep_set',
+            'result_format': 'SUMMARY'
+        },
+        'expectation_type': 'expect_column_values_to_not_be_null',
     },
     {
         'kwargs': {
@@ -849,6 +1030,13 @@ _SPARK_EXPECTATIONS = [
     {
         'kwargs': {
             'column': 'finitialized',
+            'result_format': 'SUMMARY'
+        },
+        'expectation_type': 'expect_column_values_to_not_be_null',
+    },
+    {
+        'kwargs': {
+            'column': 'finitialized',
             'type_': 'ArrayType',
             'result_format': 'SUMMARY'
         },
@@ -926,6 +1114,75 @@ _SPARK_EXPECTATIONS = [
             'result_format': 'SUMMARY'
         },
         'expectation_type': 'expect_column_values_to_be_of_type'
+    },
+    {
+        'kwargs': {
+            'column': 'fdqannotated_enum_value',
+            'column_index': 24,
+            'result_format': 'SUMMARY'
+        },
+        'expectation_type': 'expect_column_to_exist',
+    },
+    {
+        'kwargs': {
+            'column': 'fdqannotated_enum_value',
+            'result_format': 'SUMMARY'
+        },
+        'expectation_type': 'expect_column_values_to_not_be_null',
+    },
+    {
+        'kwargs': {
+            'column': 'fdqannotated_enum_value',
+            'type_': 'StringType',
+            'result_format': 'SUMMARY'
+        },
+        'expectation_type': 'expect_column_values_to_be_of_type',
+    },
+    {
+        'kwargs': {
+            'column': 'fdqannotated_enum_value',
+            'value_set': ['a', 'b'],
+            'result_format': 'SUMMARY'
+        },
+        'expectation_type': 'expect_column_values_to_be_in_set',
+    },
+    {
+        'expectation_type': 'expect_column_to_exist',
+        'kwargs': {
+            'column': 'fdqannotated_regexp',
+            'column_index': 25,
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
+        'kwargs': {
+            'column': 'fdqannotated_regexp',
+            'result_format': 'SUMMARY'
+        },
+        'expectation_type': 'expect_column_values_to_not_be_null',
+    },
+    {
+        'expectation_type': 'expect_column_values_to_be_of_type',
+        'kwargs': {
+            'column': 'fdqannotated_regexp',
+            'type_': 'StringType',
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
+        'expectation_type': 'expect_column_values_to_match_regex',
+        'kwargs': {
+            'column': 'fdqannotated_regexp',
+            'regex': '^[A-Z]{2}',
+            'result_format': 'SUMMARY'
+        }
+    },
+    {
+        'expectation_type': 'expect_column_values_to_be_unique',
+        'kwargs': {
+            'column': 'id',
+            'result_format': 'SUMMARY'
+        },
     },
 ]
 # Test data size (ie number of records synthesized)
@@ -1091,7 +1348,7 @@ class ExpectationsTest(unittest.TestCase):
         shutil.rmtree(self.test_dir)
 
     def test_conversion(self):
-        table = python2schema.ConvertDataclass(schema_test_data.TestProto)
+        table = python2schema.ConvertDataclass(TestProtoWithDqAnnotations)
         pd_exp = schema2expectations.ConvertTable(
             table, schema2expectations.EngineType.PANDAS, 'SUMMARY')
         expectations = [

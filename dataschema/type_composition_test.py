@@ -90,6 +90,11 @@ EXPECTED_EXPECTATIONS = [{
 }, {
     'kwargs': {
         'column': 'simple_list',
+    },
+    'expectation_type': 'expect_column_values_to_not_be_null',
+},{
+    'kwargs': {
+        'column': 'simple_list',
         'type_': 'ArrayType',
     },
     'expectation_type': 'expect_column_values_to_be_of_type',
@@ -106,6 +111,11 @@ EXPECTED_EXPECTATIONS = [{
         'column_index': 1,
     },
     'expectation_type': 'expect_column_to_exist',
+},{
+    'kwargs': {
+        'column': 'list_opt_int',
+    },
+    'expectation_type': 'expect_column_values_to_not_be_null',
 }, {
     'kwargs': {
         'column': 'list_opt_int',
@@ -130,6 +140,11 @@ EXPECTED_EXPECTATIONS = [{
         'column_index': 3,
     },
     'expectation_type': 'expect_column_to_exist',
+}, {
+    'kwargs': {
+        'column': 'list_opt_nested',
+    },
+    'expectation_type': 'expect_column_values_to_not_be_null',
 }, {
     'kwargs': {
         'column': 'list_opt_nested',
@@ -166,6 +181,11 @@ EXPECTED_EXPECTATIONS = [{
         'column_index': 6,
     },
     'expectation_type': 'expect_column_to_exist',
+},{
+    'kwargs': {
+        'column': 'list_opt_set',
+    },
+    'expectation_type': 'expect_column_values_to_not_be_null',
 }, {
     'kwargs': {
         'column': 'list_opt_set',
@@ -205,6 +225,11 @@ EXPECTED_EXPECTATIONS = [{
 }, {
     'kwargs': {
         'column': 'list_opt_decimal',
+    },
+    'expectation_type': 'expect_column_values_to_not_be_null',
+}, {
+    'kwargs': {
+        'column': 'list_opt_decimal',
         'type_': 'ArrayType',
     },
     'expectation_type': 'expect_column_values_to_be_of_type',
@@ -215,6 +240,11 @@ EXPECTED_EXPECTATIONS = [{
     },
     'expectation_type': 'expect_column_to_exist',
 }, {
+    'kwargs': {
+        'column': 'opt_list_opt_decimal',
+    },
+    'expectation_type': 'expect_column_values_to_not_be_null',
+},{
     'kwargs': {
         'column': 'opt_list_opt_decimal',
         'type_': 'ArrayType',
