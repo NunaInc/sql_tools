@@ -30,9 +30,9 @@ def nuna_sql_tools_load_workspace():
     ## Google protobuf
     http_archive(
         name = "com_google_protobuf",
-        sha256 = "77ad26d3f65222fd96ccc18b055632b0bfedf295cb748b712a98ba1ac0b704b2",
-        strip_prefix = "protobuf-3.17.3",
-        urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz"],
+        sha256 = "7ba0cb2ecfd9e5d44a6fa9ce05f254b7e5cd70ec89fafba0b07448f3e258310c",
+        strip_prefix = "protobuf-21.5",
+        urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v21.5/protobuf-all-21.5.tar.gz"],
     )
 
     ## Python rules
@@ -45,7 +45,7 @@ def nuna_sql_tools_load_workspace():
     ## Pylinted targets
     http_archive(
         name = "bazel_pylint",
-        sha256 = "ce8f886c113734a2a4d8c3c700d1aa666bccf9898a07ab8595304dbc26a26500",
-        strip_prefix = "bazel_pylint-0.0.6",
-        urls = ["https://github.com/NunaInc/bazel_pylint/archive/refs/tags/0.0.6.tar.gz"],
+        sha256 = "0b52b01b24d62aeedb39e78669675ced752f75d0eb8d1b1c4c392ec7e926059b",
+        strip_prefix = "bazel_pylint-0.0.7",
+        urls = ["https://github.com/NunaInc/bazel_pylint/archive/refs/tags/0.0.7.tar.gz"],
     )

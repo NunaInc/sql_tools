@@ -28,7 +28,9 @@ load("@nuna_sql_tools_pip_deps//:requirements.bzl", "requirement")
 proto_library(
     name = "SchemaProto",
     srcs = ["Schema.proto"],
-    deps = ["@com_google_protobuf//:descriptor_proto"],
+    deps = [
+        "@com_google_protobuf//:descriptor_proto",
+    ],
 )
 
 cc_proto_library(
@@ -39,7 +41,12 @@ cc_proto_library(
 py_proto_library(
     name = "SchemaProto_py",
     srcs = ["Schema.proto"],
-    deps = ["@com_google_protobuf//:protobuf_python"],
+    deps = [
+        "@com_google_protobuf//:well_known_types_py_pb2",
+    ],
+    py_libs = [
+        requirement("protobuf"),
+    ],
 )
 
 py_lint_library(
@@ -109,7 +116,9 @@ py_proto_library(
     srcs = ["schema_test.proto"],
     deps = [
         ":SchemaProto_py",
-        "@com_google_protobuf//:protobuf_python",
+    ],
+    py_libs = [
+        requirement("protobuf"),
     ],
 )
 
@@ -118,7 +127,9 @@ py_proto_library(
     srcs = ["schema_test_bad.proto"],
     deps = [
         ":SchemaProto_py",
-        "@com_google_protobuf//:protobuf_python",
+    ],
+    py_libs = [
+        requirement("protobuf"),
     ],
 )
 
@@ -127,7 +138,9 @@ py_proto_library(
     srcs = ["schema_example.proto"],
     deps = [
         ":SchemaProto_py",
-        "@com_google_protobuf//:protobuf_python",
+    ],
+    py_libs = [
+        requirement("protobuf"),
     ],
 )
 
@@ -204,6 +217,7 @@ py_lint_test(
         ":dataschema",
         ":schema_example",
         ":schema_test_data",
+        requirement("protobuf"),
     ],
 )
 

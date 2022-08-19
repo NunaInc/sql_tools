@@ -1308,7 +1308,7 @@ class ExpectationsTest(unittest.TestCase):
         self.sql_meta = sqlalchemy.MetaData()
         table = schema2sqlalchemy.ConvertTable(
             python2schema.ConvertDataclass(DataTest), meta=self.sql_meta)
-        for column in table.columns:
+        for column in table.columns:  # pylint: disable=not-an-iterable
             coltype = self.engine.dialect.type_compiler.process(
                 column.type, type_expression=column)
             print(f'{column} / {column.type} ==> {coltype}')
