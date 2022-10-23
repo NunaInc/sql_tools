@@ -48,9 +48,20 @@ from setuptools import setup
 PROJECT = 'nuna_sql_tools'
 with open('VERSION', 'r', encoding='utf-8') as f:
     VERSION = f.read().strip()
+
+EXTRA_REQUIRED_PACKAGES  = {}
+REQUIRED_PACKAGES = []
 with open('requirements.txt', 'r', encoding='utf-8') as f:
     lines = [l.strip() for l in f.readlines()]
-    REQUIRED_PACKAGES = [l for l in lines if l and not l.startswith('#')]
+    for line in lines:
+        if line.startswith("#"):
+            continue
+        if line.startswith("protobuf") or line.startswith("absl-py"):
+            REQUIRED_PACKAGES.append(line)
+        else:
+            package_name = line.split("==")[0].rstrip("[all]")
+            EXTRA_REQUIRED_PACKAGES[package_name] = [line]
+
 DOCLINES = __doc__.split('\n')
 ENTRY_POINTS = [
     'sql_analyze-viewer=sql_analyze.viewer.viewer:main',
@@ -63,6 +74,7 @@ PACKAGE_DATA = glob.glob(
 
 print(f'Package data: {PACKAGE_DATA}')
 print(f'Required packages: {REQUIRED_PACKAGES}')
+print(f'Extra Required packages: {EXTRA_REQUIRED_PACKAGES}')
 
 setup(
     name=PROJECT,
@@ -90,5 +102,6 @@ setup(
     include_package_data=True,
     entry_points={'console_scripts': ENTRY_POINTS},
     install_requires=REQUIRED_PACKAGES,
+    extras_require=EXTRA_REQUIRED_PACKAGES,
     zip_safe=False,
 )
