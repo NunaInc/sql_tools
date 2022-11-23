@@ -410,7 +410,7 @@ class ParquetWriter(BaseWriter):
         """Opens a parquet file from an url/path. Use `s3` or `hdfs` as schemes."""
         info = urllib.parse.urlparse(file_url)
         if not info.scheme or info.scheme in ('file', 'local'):
-            return (parquet.LocalFileSystem(), info.path)
+            return (fs.LocalFileSystem(), info.path)
         if info.scheme == 's3':
             # This returns a tuple:
             return fs.S3FileSystem.from_uri(file_url)

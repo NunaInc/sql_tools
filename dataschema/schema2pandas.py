@@ -44,7 +44,6 @@ _TYPE_MAPPING = {
     Schema_pb2.ColumnInfo.TYPE_FLOAT_64: lambda _: pandas.Float64Dtype(),
     Schema_pb2.ColumnInfo.TYPE_DATETIME_64: _GetDateTimeType,
     Schema_pb2.ColumnInfo.TYPE_STRING: lambda _: pandas.StringDtype(),
-    Schema_pb2.ColumnInfo.TYPE_BYTES: lambda _: 'V',
 }
 
 

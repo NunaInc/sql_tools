@@ -48,6 +48,13 @@ _SCHEMA_ANNOTATIONS = '__schema_annotations__'
 _CLASS_ID = 0
 
 
+def _GetModuleName(cls: type):
+    return getattr(cls, '__module__')
+
+def _GetClassName(cls: type):
+    return getattr(cls, '__name__', str(cls))
+
+
 def _Annotate(cls=None, annotation=None):
     """Annotates a class or a type. `annotation` should from annotation.py"""
 
@@ -219,11 +226,13 @@ class DataclassChecker:
         self.nested = []
 
     def _err_class(self):
-        return f'dataclass class `{self.cls}` in module `{self.cls.__module__}`'
+        return (f'dataclass class `{self.cls}` '
+                f'in module `{_GetModuleName(self.cls)}`')
 
     def _err_field(self, field: str):
-        return (f'field `{field}` of dataclass class `{self.cls.__name__}` '
-                f'in module `{self.cls.__module__}`')
+        return (f'field `{field}` of dataclass '
+                f'class `{_GetClassName(self.cls)}` '
+                f'in module `{_GetModuleName(self.cls)}`')
 
     def check_is_dataclass(self):
         if not dataclasses.is_dataclass(self.cls):

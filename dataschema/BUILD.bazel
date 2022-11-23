@@ -65,7 +65,10 @@ py_lint_test(
     ],
 )
 
-py_lint_library(
+# Disable pylinting this one - strange failure
+#   in later version of astroid on a typing.NewType("..."
+#   construct.
+py_library(
     name = "dataschema",
     srcs = [
         "Schema.py",
@@ -87,10 +90,6 @@ py_lint_library(
         "schema_types.py",
         "strutil.py",
     ],
-    rules = "//:pylintrc",
-    # Pylint-ing this may cause a blocking on Linux in certain package
-    # configuration, because of the protobuf usage - we skip from linting.
-    skip_srcs = ["proto2schema.py"],
     srcs_version = "PY3",
     deps = [
         ":SchemaProto_py",

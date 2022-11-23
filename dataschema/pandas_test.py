@@ -35,7 +35,7 @@ class ParquetTest(unittest.TestCase):
                 'fdouble': pandas.Float64Dtype(),
                 'ffloat': pandas.Float32Dtype(),
                 'fstring': pandas.StringDtype(),
-                'fbytes': 'V',
+                'fbytes': 'O',
                 'fdate': 'O',
                 'ftimestamp': pandas.DatetimeTZDtype(tz='Etc/UTC'),
                 'fdqannotated': pandas.StringDtype(),
