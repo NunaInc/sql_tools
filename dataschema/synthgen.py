@@ -1511,7 +1511,7 @@ class JointGenerator(Generator):
         return (Names.JOINT, (self._child.save(), choices))
 
 
-class FieldGenerator(Builder):
+class FieldGenerator(Generator):
     """Generates a field from the currently generated record."""
 
     def __init__(self, rand: numpy.random.Generator, field_name: str,
@@ -1713,7 +1713,7 @@ _CLASS_MAP = {
 
 
 def AddGeneratorClass(key: str, generator_class: type):
-    global _CLASS_MAP
+    global _CLASS_MAP  # pylint: disable=global-variable-not-assigned
     if not issubclass(generator_class, Generator):
         raise ValueError(
             f'Not a generator class provided: {generator_class}')

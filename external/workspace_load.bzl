@@ -30,9 +30,9 @@ def nuna_sql_tools_load_workspace():
     ## Google protobuf
     http_archive(
         name = "com_google_protobuf",
-        sha256 = "77ad26d3f65222fd96ccc18b055632b0bfedf295cb748b712a98ba1ac0b704b2",
-        strip_prefix = "protobuf-3.17.3",
-        urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v3.17.3/protobuf-all-3.17.3.tar.gz"],
+        sha256 = "7b8d3ac3d6591ce9d25f90faba80da78d0ef620fda711702367f61a40ba98429",
+        strip_prefix = "protobuf-3.19.0",
+        urls = ["https://github.com/protocolbuffers/protobuf/releases/download/v3.19.0/protobuf-all-3.19.0.tar.gz"],
     )
 
     ## Python rules

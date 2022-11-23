@@ -67,21 +67,21 @@ OptBytes = Optional[bytes]
 OptChUInt64 = Annotate(Optional[int], annotations.ClickhouseType('UInt64'))
 
 
-def Decimal(scale: int, precision: int) -> type:
+def Decimal(precision: int, scale: int) -> type:
     """Quickly build a decimal type."""
-    return Annotate(decimal.Decimal, annotations.Decimal(scale, precision))
+    return Annotate(decimal.Decimal, annotations.Decimal(precision, scale))
 
 
-def DecimalList(scale: int, precision: int) -> type:
+def DecimalList(precision: int, scale: int) -> type:
     """Quickly build a decimal type."""
     return Annotate(List[decimal.Decimal],
-                    annotations.Decimal(scale, precision))
+                    annotations.Decimal(precision, scale))
 
 
-def OptDecimal(scale: int, precision: int) -> type:
+def OptDecimal(precision: int, scale: int) -> type:
     """Quickly build an optional decimal type."""
     return Annotate(Optional[decimal.Decimal],
-                    annotations.Decimal(scale, precision))
+                    annotations.Decimal(precision, scale))
 
 
 def Lz4(t: type) -> type:

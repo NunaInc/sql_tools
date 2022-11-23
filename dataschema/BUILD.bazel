@@ -39,7 +39,12 @@ cc_proto_library(
 py_proto_library(
     name = "SchemaProto_py",
     srcs = ["Schema.proto"],
-    deps = ["@com_google_protobuf//:protobuf_python"],
+    py_libs = [
+        requirement("protobuf"),
+    ],
+    deps = [
+        "@com_google_protobuf//:protobuf_python",
+    ],
 )
 
 py_lint_library(
@@ -106,27 +111,33 @@ py_library(
 py_proto_library(
     name = "schema_test_py",
     srcs = ["schema_test.proto"],
+    py_libs = [
+        requirement("protobuf"),
+    ],
     deps = [
         ":SchemaProto_py",
-        "@com_google_protobuf//:protobuf_python",
     ],
 )
 
 py_proto_library(
     name = "schema_test_bad_py",
     srcs = ["schema_test_bad.proto"],
+    py_libs = [
+        requirement("protobuf"),
+    ],
     deps = [
         ":SchemaProto_py",
-        "@com_google_protobuf//:protobuf_python",
     ],
 )
 
 py_proto_library(
     name = "schema_example_py",
     srcs = ["schema_example.proto"],
+    py_libs = [
+        requirement("protobuf"),
+    ],
     deps = [
         ":SchemaProto_py",
-        "@com_google_protobuf//:protobuf_python",
     ],
 )
 
@@ -138,6 +149,7 @@ py_lint_library(
     srcs_version = "PY3",
     deps = [
         ":dataschema",
+        requirement("protobuf"),
     ],
 )
 
