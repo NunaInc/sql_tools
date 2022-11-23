@@ -89,6 +89,7 @@ class WithVisitor(HiveParserVisitor):
     """Visits WITH part in a select statement."""
 
     def __init__(self, query: statement.Query):
+        super().__init__()
         self.query = query
         self.identifier = None
 
@@ -122,6 +123,7 @@ class ExpressionVisitor(HiveParserVisitor):
     """Visits a computational expression in a statement."""
 
     def __init__(self, query: statement.Source, expression: tokens.Tokens):
+        super().__init__()
         self.query = query
         self.expression = expression
         self.sub_queries = []
@@ -350,6 +352,7 @@ class AtomSelectVisitor(HiveParserVisitor):
     """Processes an atomSelectStatement parse tree."""
 
     def __init__(self, query: statement.Source):
+        super().__init__()
         self.query = query
 
     def visitSelectClause(self, ctx: HiveParser.SelectClauseContext):
@@ -498,6 +501,7 @@ class SelectVisitor(HiveParserVisitor):
     """Processes the main `selectStatement` part of a query statement."""
 
     def __init__(self, query: statement.Source):
+        super().__init__()
         self.query = query
 
     def visitAtomSelectStatement(self,
@@ -635,7 +639,6 @@ class QueryCTEVisitor(HiveParserVisitor):
     def __init__(self,
                  parent: Optional[statement.Source] = None,
                  name: Optional[str] = None):
-
         super().__init__()
         self.query = statement.Query(parent, name)
 
@@ -652,6 +655,7 @@ class StatementVisitor(HiveParserVisitor):
     """Processes a top `statements` parse tree."""
 
     def __init__(self):
+        super().__init__()
         self.statements = []
 
     def visitStatement(self, ctx: HiveParser.StatementContext):

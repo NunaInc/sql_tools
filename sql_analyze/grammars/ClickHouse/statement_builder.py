@@ -34,6 +34,7 @@ class ExpressionVisitor(ClickHouseParserVisitor):
     """Visits a computational expression in a statement."""
 
     def __init__(self, query: statement.Source, expression: tokens.Tokens):
+        super().__init__()
         self.query = query
         self.expression = expression
         self.sub_queries = []
@@ -72,6 +73,7 @@ class SelectUnionVisitor(ClickHouseParserVisitor):
     """Visitor for a UNION ALL composed Statement."""
 
     def __init__(self, parent: Optional[statement.Source] = None):
+        super().__init__()
         self.query = None
         self.parent = parent
 
@@ -441,6 +443,7 @@ class QueryStmtVisitor(ClickHouseParserVisitor):
     """Processes the top level statement."""
 
     def __init__(self, java_package_name: Optional[str] = None):
+        super().__init__()
         self.statements = []
         self.java_package_name = java_package_name
 
@@ -552,6 +555,7 @@ class MultiQueryStmtVisitor(ClickHouseParserVisitor):
     """Processes multiple query statements."""
 
     def __init__(self, java_package_name: Optional[str] = None):
+        super().__init__()
         self.statements = []
         self.java_package_name = java_package_name
 

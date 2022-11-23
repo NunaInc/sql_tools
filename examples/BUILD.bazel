@@ -9,7 +9,6 @@ py_proto_library(
     srcs = ["example.proto"],
     deps = [
         "//dataschema:SchemaProto_py",
-        "@com_google_protobuf//:protobuf_python",
     ],
 )
 
