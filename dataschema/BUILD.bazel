@@ -83,6 +83,7 @@ py_library(
         "proto2schema.py",
         "pyspark2schema.py",
         "python2schema.py",
+        "schema2beam.py",
         "schema2dbml.py",
         "schema2expectations.py",
         "schema2pandas.py",
@@ -99,6 +100,7 @@ py_library(
     deps = [
         ":SchemaProto_py",
         ":synthgen",
+        requirement("apache-beam"),
         requirement("great_expectations"),
         requirement("pandas"),
         requirement("protobuf"),
@@ -235,6 +237,19 @@ py_lint_test(
     name = "pyspark_test",
     timeout = "short",
     srcs = ["pyspark_test.py"],
+    rules = "//:pylintrc",
+    srcs_version = "PY3",
+    deps = [
+        ":dataschema",
+        ":schema_example",
+        ":schema_test_data",
+    ],
+)
+
+py_lint_test(
+    name = "beam_test",
+    timeout = "short",
+    srcs = ["beam_test.py"],
     rules = "//:pylintrc",
     srcs_version = "PY3",
     deps = [
